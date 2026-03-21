@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter pub:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(flutter build:*)",
+      "Bash(flutter sdk-path:*)",
+      "Bash(flutter --version)",
+      "Bash(where flutter:*)",
+      "Bash(cmd /c \"gradlew.bat --version\")",
+      "Bash(cmd /c \"chcp 65001 && gradlew.bat --version\")",
+      "Bash(powershell -Command \"\\(New-Object -ComObject Scripting.FileSystemObject\\).GetFolder\\(''c:\\\\Users\\\\kouta\\\\FlutterProjects\\\\20260320‗1\\\\obd2app\\\\android''\\).ShortPath\")",
+      "Bash(cmd /c \"cd /d C:\\\\Users\\\\kouta\\\\FLUTTE~1\\\\207FCC~1\\\\obd2app\\\\android && gradlew.bat --version 2>&1\")",
+      "Bash(find /c/Users/kouta/FlutterProjects/20260320obd1/obd2app/test -type f -name *.dart)",
+      "Bash(find /c/Users/kouta/FlutterProjects/20260320obd1/obd2app/lib -type f -name \"*.dart\" -exec wc -l {} +)"
+    ]
+  }
+}
