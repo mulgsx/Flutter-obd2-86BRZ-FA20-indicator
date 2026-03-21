@@ -36,7 +36,7 @@ dart format lib/
 ```
 main.dart → ScanBlePage (BT adapter check)
   ├─ BT ON  → FindDevicesPage (scan & pair)
-  └─ BT ON + device selected → DashboardPage (live monitoring)
+  └─ device selected → DashboardPage (live monitoring)
 ```
 
 **Controller responsibilities:**
@@ -48,32 +48,29 @@ main.dart → ScanBlePage (BT adapter check)
 1. Connect → negotiate MTU 256 → discover GATT services
 2. Find FFF0 service (fallback: FFE0) → locate notify + write characteristics
 3. Send AT initialization sequence: `ATZ → ATE0 → ATH0 → ATL0 → ATS1 → ATSP0` (300ms between each)
-4. Poll PID queue cyclically: `['010C\r', '0105\r', '2213 05\r']` (RPM, water temp, oil temp)
+4. Poll PID queue cyclically: `['010C\r', '0105\r', '2101\r']` (RPM, water temp, oil temp)
 5. Buffer notify stream data until `>` prompt, then resolve Completer and parse response
 
+**Oil temp special handling:** PID `2101` requires the CAN header to be set to `7E0` (engine ECU). The polling loop sends `ATSH 7E0\r` immediately before `2101\r`, then resets with `ATSH 7DF\r` after. This header switch must NOT be in the init sequence — doing so causes Mode 01 responses to lag by one command.
+
 **Response parsing:**
-- Supports header-on (`7E8 04 41 0C A0 00`) and header-off (`41 0C A0 00`) formats
-- RPM: `(A*256 + B) / 4`, Temp: `A - 40`
-- Oil temp PID `2213 05` is Mode 22 (BRZ-specific, currently returning NO DATA — see `OIL_TEMP_INVESTIGATION.md`)
+- Supports header-on (`7E8 04 41 0C A0 00`), header-off (`41 0C A0 00`), and ISO 15765 multi-frame (`01F 00: 61 01 XX ...`) formats
+- RPM: `(A*256 + B) / 4`, Water temp: `A - 40`
+- Oil temp: ELM327 returns a multi-frame response; byte A is at `parts[4]` when `parts[1].endsWith(':')`. Formula: `A - 40`
 
 **GaugeWidget** uses `CustomPaint` with a 150° start / 240° sweep arc, color-coded segments per threshold zones defined in `GaugeConfig`.
 
 ## BLE Protocol Details
 
 - **Service UUID:** FFF0 (primary), FFE0 (fallback)
-- **Characteristics:** FFF1 (notify/read), FFF2 (write)
-- ELM327 commands sent as UTF-8 codeUnits; responses collected until `>` terminator
+- **Characteristics:** notify + write (discovered by property, not fixed UUID)
+- ELM327 commands sent as UTF-8 codeUnits; responses buffered in `StringBuffer` until `>` terminator
 
-See `SPEC_BRZ.md` for complete AT command sequences and PID specifications.
-
-## Known Issues
-
-- **Oil temperature (PID `2213 05`)** returns NO DATA during automated polling despite showing data in manual PID testers. Leading hypothesis: Extended Diagnostic Session (`1003`) may be required before Mode 22. Details in `OIL_TEMP_INVESTIGATION.md`.
-- Widget test (`test/widget_test.dart`) is a Flutter starter placeholder, not app-specific.
+See `SPEC_BRZ.md` for the full specification including verified real-car logs.
 
 ## UI Notes
 
 - Landscape-only, immersive (no status bar), wake lock enabled — configured in `main.dart` at startup
 - Dark theme: background `#0D1117`, surface `#161B22`, accent `#58A6FF`
 - Dashboard gauge layout: water temp (left) | RPM (center, larger) | oil temp (right)
-- Debug log panel (modal bottom sheet) color-codes TX=blue, RX=green, ERROR/TIMEOUT=red
+- Debug log panel: `DraggableScrollableSheet` (75–95% height), `enableDrag: false` to prevent scroll/dismiss conflict, TX=blue, RX=green, ERROR/TIMEOUT=red
