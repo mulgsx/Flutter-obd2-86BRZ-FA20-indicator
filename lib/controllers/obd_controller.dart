@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:get/get.dart';
+import '../domains/obd_response_cleaner.dart';
+import '../services/debug_log_manager.dart';
+import '../utils/obd_debug_formatter.dart';
 
 enum OBDStatus { disconnected, connecting, initializing, polling, error }
 
@@ -19,6 +22,7 @@ class OBDController extends GetxController {
   final logs = <String>[].obs;
 
   // --- 内部状態 ---
+  final debugLogManager = DebugLogManager();
   BluetoothCharacteristic? _writeChar;
   BluetoothCharacteristic? _notifyChar;
   Completer<String>? _pendingResponse;
@@ -144,8 +148,10 @@ class OBDController extends GetxController {
   // コマンド送信
   // ---------------------------------------------------------------------------
 
-  Future<String?> _sendCommand(String command,
-      {Duration timeout = const Duration(seconds: 3)}) async {
+  Future<String?> _sendCommand(
+    String command, {
+    Duration timeout = const Duration(seconds: 3),
+  }) async {
     if (_writeChar == null) return null;
     _log('TX: ${command.trim()}');
 
@@ -168,14 +174,7 @@ class OBDController extends GetxController {
   }
 
   Future<void> _sendInitSequence() async {
-    final cmds = [
-      'ATZ\r',
-      'ATE0\r',
-      'ATH0\r',
-      'ATL0\r',
-      'ATS1\r',
-      'ATSP0\r',
-    ];
+    final cmds = ['ATZ\r', 'ATE0\r', 'ATH0\r', 'ATL0\r', 'ATS1\r', 'ATSP0\r'];
     for (final cmd in cmds) {
       await _sendCommand(cmd, timeout: const Duration(seconds: 3));
       await Future.delayed(const Duration(milliseconds: 300));
@@ -194,15 +193,23 @@ class OBDController extends GetxController {
       String? response;
       if (cmd == '2101\r') {
         // Mode 21はECU固有ヘッダが必要なため、このコマンドのみ一時的に変更
-        await _sendCommand('ATSH 7E0\r',
-            timeout: const Duration(milliseconds: 500));
-        response = await _sendCommand(cmd,
-            timeout: const Duration(milliseconds: 3000));
-        await _sendCommand('ATSH 7DF\r',
-            timeout: const Duration(milliseconds: 500)); // デフォルトに戻す
+        await _sendCommand(
+          'ATSH 7E0\r',
+          timeout: const Duration(milliseconds: 500),
+        );
+        response = await _sendCommand(
+          cmd,
+          timeout: const Duration(milliseconds: 3000),
+        );
+        await _sendCommand(
+          'ATSH 7DF\r',
+          timeout: const Duration(milliseconds: 500),
+        ); // デフォルトに戻す
       } else {
-        response =
-            await _sendCommand(cmd, timeout: const Duration(milliseconds: 800));
+        response = await _sendCommand(
+          cmd,
+          timeout: const Duration(milliseconds: 800),
+        );
       }
 
       if (response != null && response.isNotEmpty) {
@@ -221,13 +228,21 @@ class OBDController extends GetxController {
         return;
       }
 
+      final rawParts = _splitHex(trimmed);
+      if (rawParts.isEmpty) return;
+
+      final parts = _cleanMultiFrame(rawParts);
+      if (parts.length < 2) return;
+
+      final startIndex = _dataStartIndex(parts, command.trim());
+
       if (command == '010C\r') {
-        rpm.value = _parseRpm(trimmed);
+        rpm.value = _parseRpm(trimmed, rawParts, parts, startIndex);
       } else if (command == '0105\r') {
-        waterTemp.value = _parseTemp(trimmed);
+        waterTemp.value = _parseTemp(trimmed, rawParts, parts, startIndex);
       } else if (command == '2101\r') {
         _log('OIL RAW: $trimmed'); // バイト位置確認用
-        oilTemp.value = _parseOilTemp(trimmed);
+        oilTemp.value = _parseOilTemp(trimmed, rawParts, parts, startIndex);
       }
     } catch (e) {
       _log('PARSE ERR: $e ($response)');
@@ -239,56 +254,154 @@ class OBDController extends GetxController {
   // ---------------------------------------------------------------------------
 
   /// RPM: (A*256 + B) / 4
-  /// ATH0形式: "41 0C A0 00" → データ開始インデックス=2
-  /// ヘッダあり: "7E8 04 41 0C A0 00" → インデックス=4
-  int _parseRpm(String response) {
-    final parts = _splitHex(response);
-    final idx = _dataStartIndex(parts, '0C');
-    final a = int.parse(parts[idx], radix: 16);
-    final b = int.parse(parts[idx + 1], radix: 16);
-    return (a * 256 + b) ~/ 4;
+  int _parseRpm(
+    String response,
+    List<String> rawParts,
+    List<String> parts,
+    int startIndex,
+  ) {
+    try {
+      if (parts.length <= startIndex + 1) {
+        throw FormatException('Response too short: $response');
+      }
+
+      final a = int.parse(parts[startIndex], radix: 16);
+      final b = int.parse(parts[startIndex + 1], radix: 16);
+      final result = (a * 256 + b) ~/ 4;
+      debugLogManager.addLog(
+        OBDDebugFormatter.formatRpmParse(
+          timestamp: DateTime.now(),
+          rawResponse: response,
+          parts: rawParts,
+          dataIndex: startIndex,
+          byteA: a,
+          byteB: b,
+          result: result,
+          success: true,
+        ),
+      );
+      return result;
+    } catch (e) {
+      debugLogManager.addLog(
+        OBDDebugFormatter.formatRpmParse(
+          timestamp: DateTime.now(),
+          rawResponse: response,
+          parts: rawParts,
+          dataIndex: -1,
+          byteA: 0,
+          byteB: 0,
+          result: 0,
+          success: false,
+          errorMessage: e.toString(),
+        ),
+      );
+      rethrow;
+    }
   }
 
   /// 冷却水温: A - 40 [℃]
-  /// "41 05 7B" → 0x7B - 40 = 83℃
-  int _parseTemp(String response) {
-    final parts = _splitHex(response);
-    final idx = _dataStartIndex(parts, '05');
-    return int.parse(parts[idx], radix: 16) - 40;
+  int _parseTemp(
+    String response,
+    List<String> rawParts,
+    List<String> parts,
+    int startIndex,
+  ) {
+    try {
+      if (parts.length <= startIndex) {
+        throw FormatException('Response too short: $response');
+      }
+
+      final byteValue = int.parse(parts[startIndex], radix: 16);
+      final result = byteValue - 40;
+      debugLogManager.addLog(
+        OBDDebugFormatter.formatWaterTempParse(
+          timestamp: DateTime.now(),
+          rawResponse: response,
+          parts: rawParts,
+          dataIndex: startIndex,
+          byteValue: byteValue,
+          result: result,
+          success: true,
+        ),
+      );
+      return result;
+    } catch (e) {
+      debugLogManager.addLog(
+        OBDDebugFormatter.formatWaterTempParse(
+          timestamp: DateTime.now(),
+          rawResponse: response,
+          parts: rawParts,
+          dataIndex: -1,
+          byteValue: 0,
+          result: 0,
+          success: false,
+          errorMessage: e.toString(),
+        ),
+      );
+      rethrow;
+    }
   }
 
   /// BRZ ZC6 油温 Mode 21: A - 40 [℃]
-  /// TorquePro式 AC-40 の C は Celsius の意（A=最初のデータバイト）
-  /// マルチフレーム: "01F 00: 61 01 [A] ..." → idxA=4
-  /// ヘッダあり:    "7E8 XX 61 01 [A] ..." → idxA=4
-  /// ヘッダなし:    "61 01 [A] ..."         → idxA=2
-  int _parseOilTemp(String response) {
-    final parts = _splitHex(response);
-    final int idxA;
-    if (parts.length > 1 && parts[1].endsWith(':')) {
-      idxA = 4; // マルチフレーム形式 "01F 00: 61 01 [A]"
-    } else if (parts[0].length == 3 && parts[0].startsWith('7')) {
-      idxA = 4; // ヘッダあり "7E8 XX 61 01 [A]"
-    } else {
-      idxA = 2; // ヘッダなし "61 01 [A]"
+  /// 正規化済みの [61, 01, DATA0, ...] から DATA4 を読む。
+  int _parseOilTemp(
+    String response,
+    List<String> rawParts,
+    List<String> parts,
+    int startIndex,
+  ) {
+    try {
+      const oilTempOffset = 28;
+      final targetIndex = startIndex + oilTempOffset;
+
+      if (parts.length <= targetIndex) {
+        throw FormatException('Response too short: $response');
+      }
+
+      final rawValue = int.parse(parts[targetIndex], radix: 16);
+      final result = rawValue - 40;
+      debugLogManager.addLog(
+        OBDDebugFormatter.formatOilTempParse(
+          timestamp: DateTime.now(),
+          rawResponse: response,
+          parts: rawParts,
+          dataIndex: targetIndex,
+          byteValue: rawValue,
+          result: result,
+          success: true,
+        ),
+      );
+      _log('OIL TEMP: raw=0x${parts[targetIndex]} ($rawValue) → $result℃');
+      return result;
+    } catch (e) {
+      debugLogManager.addLog(
+        OBDDebugFormatter.formatOilTempParse(
+          timestamp: DateTime.now(),
+          rawResponse: response,
+          parts: rawParts,
+          dataIndex: -1,
+          byteValue: 0,
+          result: 0,
+          success: false,
+          errorMessage: e.toString(),
+        ),
+      );
+      _log('OIL TEMP PARSE ERROR: $e | response=$response');
+      return 0;
     }
-    if (parts.length <= idxA) {
-      throw FormatException('Invalid oil temp response: $response');
-    }
-    return int.parse(parts[idxA], radix: 16) - 40;
+  }
+
+  List<String> _cleanMultiFrame(List<String> parts) {
+    return OBDResponseCleaner.clean(parts);
   }
 
   List<String> _splitHex(String response) =>
       response.split(' ').where((s) => s.isNotEmpty).toList();
 
   /// モード01レスポンスのデータ開始インデックスを返す。
-  /// ヘッダあり形式 "7E8 XX 41 PID DATA..." の場合はスキップする。
+  /// OBDResponseCleaner によってあらかじめ余分なヘッダやマルチフレームコードが削ぎ落とされ、
+  /// 配列の先頭が必ず [61, 01, ...] などの形に統一されるため、固定で 2 を返す。
   int _dataStartIndex(List<String> parts, String pid) {
-    if (parts[0].length == 3 && parts[0].startsWith('7')) {
-      // ヘッダあり: [7E8, len, 41, PID, DATA...]
-      return 4;
-    }
-    // ヘッダなし: [41, PID, DATA...]
     return 2;
   }
 

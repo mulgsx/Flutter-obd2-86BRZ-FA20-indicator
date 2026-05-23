@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:get/get.dart';
 import '../controllers/obd_controller.dart';
 import '../models/gauge_config.dart';
+import '../services/debug_log_manager.dart';
 import '../widgets/gauge_widget.dart';
 
 /// OBDデータをゲージで表示するメイン画面。
@@ -226,12 +228,21 @@ class _LogPanel extends StatelessWidget {
   Widget build(BuildContext context) => const SizedBox.shrink();
 }
 
-class _LogSheet extends StatelessWidget {
+class _LogSheet extends StatefulWidget {
   final OBDController obd;
   const _LogSheet({required this.obd});
 
   @override
+  State<_LogSheet> createState() => _LogSheetState();
+}
+
+class _LogSheetState extends State<_LogSheet> {
+  /// 'plain' = 構造化ログ表示 / 'csv' / 'json'
+  String _format = 'plain';
+
+  @override
   Widget build(BuildContext context) {
+    final mgr = widget.obd.debugLogManager;
     return DraggableScrollableSheet(
       initialChildSize: 0.75,
       minChildSize: 0.4,
@@ -240,6 +251,7 @@ class _LogSheet extends StatelessWidget {
       builder: (_, scrollController) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ヘッダ行
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
             child: Row(
@@ -253,9 +265,14 @@ class _LogSheet extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
+                _ExportMenuButton(mgr: mgr),
+                const SizedBox(width: 4),
+                _ClearButton(mgr: mgr),
+                const SizedBox(width: 4),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close, color: Colors.white38, size: 18),
+                  icon:
+                      const Icon(Icons.close, color: Colors.white38, size: 18),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),
@@ -263,35 +280,231 @@ class _LogSheet extends StatelessWidget {
             ),
           ),
           const Divider(color: Color(0xFF30363D), height: 1),
+          // フォーマット選択ボタン行
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            child: Row(
+              children: [
+                _FmtBtn(
+                  label: 'リアルタイム',
+                  selected: _format == 'plain',
+                  onTap: () => setState(() => _format = 'plain'),
+                ),
+                const SizedBox(width: 6),
+                _FmtBtn(
+                  label: 'CSV',
+                  selected: _format == 'csv',
+                  onTap: () => setState(() => _format = 'csv'),
+                ),
+                const SizedBox(width: 6),
+                _FmtBtn(
+                  label: 'JSON',
+                  selected: _format == 'json',
+                  onTap: () => setState(() => _format = 'json'),
+                ),
+              ],
+            ),
+          ),
+          const Divider(color: Color(0xFF30363D), height: 1),
+          // ログ表示エリア
           Expanded(
-            child: Obx(() => ListView.builder(
-                  controller: scrollController,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
-                  ),
-                  itemCount: obd.logs.length,
-                  itemBuilder: (_, i) {
-                    final log = obd.logs[i];
-                    Color color = const Color(0xFF8B949E);
-                    if (log.contains('TX:')) color = const Color(0xFF58A6FF);
-                    if (log.contains('RX:')) color = const Color(0xFF3FB950);
-                    if (log.contains('ERROR') || log.contains('TIMEOUT')) {
-                      color = const Color(0xFFF85149);
-                    }
-                    return Text(
-                      log,
-                      style: TextStyle(
-                        color: color,
-                        fontSize: 10,
-                        fontFamily: 'monospace',
-                      ),
-                    );
-                  },
-                )),
+            child: _LogContent(
+              obd: widget.obd,
+              format: _format,
+              scrollController: scrollController,
+            ),
           ),
         ],
       ),
     );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// ログシート内部ウィジェット群
+// ---------------------------------------------------------------------------
+
+class _ExportMenuButton extends StatelessWidget {
+  final DebugLogManager mgr;
+  const _ExportMenuButton({required this.mgr});
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.download, color: Color(0xFF58A6FF), size: 18),
+      padding: EdgeInsets.zero,
+      color: const Color(0xFF161B22),
+      onSelected: (value) async {
+        final text = switch (value) {
+          'plain' => mgr.exportAsPlainText(),
+          'csv' => mgr.exportAsCSV(),
+          'json' => mgr.exportAsJSON(),
+          _ => '',
+        };
+        if (text.isEmpty) return;
+        await Clipboard.setData(ClipboardData(text: text));
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('クリップボードにコピーしました'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      },
+      itemBuilder: (_) => const [
+        PopupMenuItem(value: 'plain', child: Text('テキストでコピー')),
+        PopupMenuItem(value: 'csv', child: Text('CSVでコピー')),
+        PopupMenuItem(value: 'json', child: Text('JSONでコピー')),
+      ],
+    );
+  }
+}
+
+class _ClearButton extends StatelessWidget {
+  final DebugLogManager mgr;
+  const _ClearButton({required this.mgr});
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: () => showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          backgroundColor: const Color(0xFF161B22),
+          title: const Text(
+            'ログをクリア',
+            style: TextStyle(color: Colors.white70, fontSize: 14),
+          ),
+          content: const Text(
+            'すべてのデバッグログを削除します。',
+            style: TextStyle(color: Colors.white54, fontSize: 12),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('キャンセル'),
+            ),
+            TextButton(
+              onPressed: () {
+                mgr.clearLogs();
+                Navigator.pop(context);
+              },
+              child:
+                  const Text('クリア', style: TextStyle(color: Colors.redAccent)),
+            ),
+          ],
+        ),
+      ),
+      icon:
+          const Icon(Icons.delete_outline, color: Colors.white38, size: 18),
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(),
+    );
+  }
+}
+
+class _FmtBtn extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _FmtBtn(
+      {required this.label, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: selected ? const Color(0xFF58A6FF) : Colors.white24,
+          ),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: selected ? const Color(0xFF58A6FF) : Colors.white54,
+            fontSize: 11,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LogContent extends StatelessWidget {
+  final OBDController obd;
+  final String format;
+  final ScrollController scrollController;
+  const _LogContent({
+    required this.obd,
+    required this.format,
+    required this.scrollController,
+  });
+
+  static const _mono = TextStyle(
+    fontFamily: 'monospace',
+    fontSize: 9,
+    height: 1.5,
+    color: Color(0xFF8B949E),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    if (format == 'plain') {
+      return Obx(() {
+        final logs = obd.debugLogManager.debugLogs;
+        if (logs.isEmpty) {
+          return const Center(
+            child: Text(
+              '（ログがまだ記録されていません）',
+              style: TextStyle(color: Colors.white38, fontSize: 12),
+            ),
+          );
+        }
+        return ListView.builder(
+          controller: scrollController,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          itemCount: logs.length,
+          itemBuilder: (_, i) {
+            final entry = logs[i];
+            final color = entry.success
+                ? const Color(0xFF8B949E)
+                : const Color(0xFFF85149);
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Text(
+                entry.formattedText,
+                style: _mono.copyWith(color: color),
+              ),
+            );
+          },
+        );
+      });
+    }
+
+    // CSV / JSON: SelectableText で表示
+    return Obx(() {
+      // debugLogs を参照して変更時に再ビルドさせる
+      final _ = obd.debugLogManager.debugLogs.length;
+      final text = format == 'csv'
+          ? obd.debugLogManager.exportAsCSV()
+          : obd.debugLogManager.exportAsJSON();
+      if (text.isEmpty) {
+        return const Center(
+          child: Text(
+            '（ログがまだ記録されていません）',
+            style: TextStyle(color: Colors.white38, fontSize: 12),
+          ),
+        );
+      }
+      return SingleChildScrollView(
+        controller: scrollController,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: SelectableText(text, style: _mono),
+      );
+    });
   }
 }
