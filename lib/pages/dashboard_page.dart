@@ -3,9 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:get/get.dart';
 import '../controllers/obd_controller.dart';
-import '../models/gauge_config.dart';
 import '../services/debug_log_manager.dart';
-import '../widgets/gauge_widget.dart';
+import '../widgets/tako_gauge_widget.dart';
 
 /// OBDデータをゲージで表示するメイン画面。
 /// ゲージを追加・変更する場合は [_buildGauges] を編集する。
@@ -103,73 +102,62 @@ class _GaugeArea extends StatelessWidget {
   final OBDController obd;
   const _GaugeArea({required this.obd});
 
-  // ----------------------------------------------------------------
-  // ゲージ設定。新しいゲージを追加する場合はここを編集する。
-  // ----------------------------------------------------------------
-  static const _rpmConfig = GaugeConfig(
-    label: 'ENGINE RPM',
-    unit: 'rpm',
-    minValue: 0,
-    maxValue: 8000,
-    warningThreshold: 6000,
-    dangerThreshold: 7000,
-    size: 220,
-    valueFontSize: 32,
-  );
-
-  static const _waterConfig = GaugeConfig(
-    label: 'WATER TEMP',
-    unit: '°C',
-    minValue: 60,
-    maxValue: 130,
-    warningThreshold: 100,
-    dangerThreshold: 110,
-    size: 170,
-    valueFontSize: 26,
-  );
-
-  static const _oilConfig = GaugeConfig(
-    label: 'OIL TEMP',
-    unit: '°C',
-    minValue: 60,
-    maxValue: 150,
-    warningThreshold: 120,
-    dangerThreshold: 135,
-    size: 170,
-    valueFontSize: 26,
-  );
-
   @override
   Widget build(BuildContext context) {
-    return Obx(() => _buildGauges(obd));
-  }
+    return Obx(() {
+      // Obx スコープ内で .obs 値を取り出す（LayoutBuilder の外で読む必要あり）
+      final waterVal = obd.waterTemp.value?.toDouble();
+      final rpmVal   = obd.rpm.value?.toDouble();
+      final oilVal   = obd.oilTemp.value?.toDouble();
 
-  /// ゲージのレイアウトを組み立てる。
-  /// 新しいゲージを追加する場合はここに [GaugeWidget] を追加する。
-  Widget _buildGauges(OBDController obd) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        // 左: 水温
-        GaugeWidget(
-          config: _waterConfig,
-          value: obd.waterTemp.value?.toDouble(),
-        ),
-
-        // 中央: RPM（大きめ）
-        GaugeWidget(
-          config: _rpmConfig,
-          value: obd.rpm.value?.toDouble(),
-        ),
-
-        // 右: 油温
-        GaugeWidget(
-          config: _oilConfig,
-          value: obd.oilTemp.value?.toDouble(),
-        ),
-      ],
-    );
+      return LayoutBuilder(builder: (ctx, constraints) {
+        final baseW = (constraints.maxWidth - 80) / (2 + 1.2);
+        final baseH = constraints.maxHeight;
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: baseW,
+              height: baseH,
+              child: TakoGaugeWidget(
+                value: waterVal,
+                min: 40, max: 130, redline: 105, limit: 120,
+                label: '水温 / COOLANT', unit: '°C',
+                theme: TakoTheme.red,
+                majorStep: 20, minorStep: 10,
+                scaleLabel: '°C  COOLANT',
+              ),
+            ),
+            SizedBox(
+              width: baseW * 1.2,
+              height: baseH,
+              child: TakoGaugeWidget(
+                value: rpmVal,
+                min: 0, max: 8000, redline: 6500, limit: 7500,
+                label: 'エンジン回転数 / RPM', unit: 'rpm',
+                theme: TakoTheme.red,
+                majorStep: 1000, minorStep: 500,
+                labelDiv: 1000,
+                scaleLabel: '×1000  RPM',
+              ),
+            ),
+            SizedBox(
+              width: baseW,
+              height: baseH,
+              child: TakoGaugeWidget(
+                value: oilVal,
+                min: 40, max: 150, redline: 125, limit: 140,
+                label: '油温 / OIL TEMP', unit: '°C',
+                theme: TakoTheme.amber,
+                majorStep: 20, minorStep: 10,
+                scaleLabel: '°C  OIL TEMP',
+              ),
+            ),
+          ],
+        );
+      });
+    });
   }
 }
 
