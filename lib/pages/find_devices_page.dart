@@ -25,6 +25,15 @@ class FindDevicesPage extends StatelessWidget {
           style: TextStyle(color: Colors.white, fontSize: 16, letterSpacing: 1),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          TextButton(
+            onPressed: () => Get.to(() => const DashboardPage()),
+            child: const Text(
+              'デモ',
+              style: TextStyle(color: Colors.white54, fontSize: 13),
+            ),
+          ),
+        ],
       ),
       body: Obx(() {
         if (!ctrl.permissionGranted.value && ctrl.scanResultList.isEmpty) {
@@ -59,39 +68,39 @@ class FindDevicesPage extends StatelessWidget {
           ),
         );
       }),
-      floatingActionButton: Obx(() => FloatingActionButton.extended(
-            backgroundColor: ctrl.isScanning.value
-                ? Colors.red.shade700
-                : const Color(0xFF1F6FEB),
-            onPressed: () {
-              ctrl.isScanning.value
-                  ? ctrl.stopScan()
-                  : ctrl.startScan();
-            },
-            icon: Icon(
-              ctrl.isScanning.value ? Icons.stop : Icons.search,
-              color: Colors.white,
-            ),
-            label: Text(
-              ctrl.isScanning.value ? 'スキャン停止' : 'スキャン開始',
-              style: const TextStyle(color: Colors.white),
-            ),
-          )),
+      floatingActionButton: Obx(
+        () => FloatingActionButton.extended(
+          backgroundColor: ctrl.isScanning.value
+              ? Colors.red.shade700
+              : const Color(0xFF1F6FEB),
+          onPressed: () {
+            ctrl.isScanning.value ? ctrl.stopScan() : ctrl.startScan();
+          },
+          icon: Icon(
+            ctrl.isScanning.value ? Icons.stop : Icons.search,
+            color: Colors.white,
+          ),
+          label: Text(
+            ctrl.isScanning.value ? 'スキャン停止' : 'スキャン開始',
+            style: const TextStyle(color: Colors.white),
+          ),
+        ),
+      ),
     );
   }
 
   Widget _sectionHeader(String title) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-        child: Text(
-          title,
-          style: const TextStyle(
-            color: Color(0xFF58A6FF),
-            fontSize: 12,
-            letterSpacing: 2,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+    child: Text(
+      title,
+      style: const TextStyle(
+        color: Color(0xFF58A6FF),
+        fontSize: 12,
+        letterSpacing: 2,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+  );
 }
 
 class _DeviceTile extends StatefulWidget {
@@ -116,22 +125,31 @@ class _DeviceTileState extends State<_DeviceTile> {
   Future<void> _connect() async {
     setState(() => _connecting = true);
     try {
-      await widget.result.device.connect(
-        timeout: const Duration(seconds: 15),
-      );
+      await widget.result.device.connect(timeout: const Duration(seconds: 15));
       if (!mounted) return;
       await Get.to(() => DashboardPage(device: widget.result.device));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('接続失敗: $e'),
-          backgroundColor: Colors.red.shade700,
-        ),
-      );
+      // disconnect() によるキャンセル時は SnackBar を出さない
+      final msg = e.toString();
+      if (!msg.contains('disconnected') && !msg.contains('cancel')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('接続失敗: $e'),
+            backgroundColor: Colors.red.shade700,
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _connecting = false);
     }
+  }
+
+  Future<void> _cancelConnect() async {
+    if (mounted) setState(() => _connecting = false);
+    try {
+      await widget.result.device.disconnect();
+    } catch (_) {}
   }
 
   @override
@@ -153,6 +171,7 @@ class _DeviceTileState extends State<_DeviceTile> {
       ),
       trailing: _connecting
           ? const SizedBox(
+              // 接続中アイコン（スピナー）
               width: 24,
               height: 24,
               child: CircularProgressIndicator(
@@ -161,7 +180,7 @@ class _DeviceTileState extends State<_DeviceTile> {
               ),
             )
           : const Icon(Icons.chevron_right, color: Colors.white38),
-      onTap: _connecting ? null : _connect,
+      onTap: _connecting ? _cancelConnect : _connect,
     );
   }
 }

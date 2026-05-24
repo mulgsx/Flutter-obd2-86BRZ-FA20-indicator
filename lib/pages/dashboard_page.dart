@@ -10,9 +10,9 @@ import '../widgets/gauge_widget.dart';
 /// OBDデータをゲージで表示するメイン画面。
 /// ゲージを追加・変更する場合は [_buildGauges] を編集する。
 class DashboardPage extends StatelessWidget {
-  final BluetoothDevice device;
+  final BluetoothDevice? device;
 
-  const DashboardPage({super.key, required this.device});
+  const DashboardPage({super.key, this.device});
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +51,7 @@ class _StatusBar extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Obx(() => Text(
-                  '${obd.device.platformName.isNotEmpty ? obd.device.platformName : obd.device.remoteId.str}'
+                  '${obd.device == null ? 'デモモード' : obd.device!.platformName.isNotEmpty ? obd.device!.platformName : obd.device!.remoteId.str}'
                   '  |  ${_statusLabel(obd.status.value)}',
                   style: const TextStyle(
                     color: Colors.white70,

@@ -10,7 +10,7 @@ enum OBDStatus { disconnected, connecting, initializing, polling, error }
 /// OBD通信のメインコントローラー。
 /// 接続 → ATコマンド初期化 → PIDポーリング の状態機械を管理する。
 class OBDController extends GetxController {
-  final BluetoothDevice device;
+  final BluetoothDevice? device;
   OBDController(this.device);
 
   // --- 観測可能な状態 ---
@@ -41,13 +41,13 @@ class OBDController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _start();
+    if (device != null) _start();
   }
 
   @override
   void onClose() {
     _polling = false;
-    device.disconnect();
+    device?.disconnect();
     super.onClose();
   }
 
@@ -59,11 +59,11 @@ class OBDController extends GetxController {
     try {
       status.value = OBDStatus.connecting;
       _log('デバイスに接続中...');
-      await device.connect(timeout: const Duration(seconds: 15));
-      await device.requestMtu(256);
+      await device!.connect(timeout: const Duration(seconds: 15));
+      await device!.requestMtu(256);
 
       _log('サービスを探索中...');
-      final services = await device.discoverServices();
+      final services = await device!.discoverServices();
 
       if (!_findCharacteristics(services)) {
         _setError('対応サービスが見つかりません (FFF0/FFE0)');
@@ -429,7 +429,7 @@ class OBDController extends GetxController {
 
   void disconnect() {
     _polling = false;
-    device.disconnect();
+    device?.disconnect();
     status.value = OBDStatus.disconnected;
     statusMessage.value = '';
   }
