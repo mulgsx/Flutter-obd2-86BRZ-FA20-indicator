@@ -11,14 +11,6 @@ class GaugeConfig {
   final double minValue;
   final double maxValue;
 
-  /// Switches to warning color at or above this value (null = no warning).
-  /// この値以上で警告色に変わる（null = 警告なし）
-  final double? warningThreshold;
-
-  /// Switches to danger color at or above this value (null = no danger).
-  /// この値以上で危険色に変わる（null = 危険なし）
-  final double? dangerThreshold;
-
   final Color normalColor;
   final Color warningColor;
   final Color dangerColor;
@@ -37,13 +29,11 @@ class GaugeConfig {
     required this.unit,
     required this.minValue,
     required this.maxValue,
-    this.warningThreshold,
-    this.dangerThreshold,
     this.normalColor = AppColors.success,
     this.warningColor = AppColors.warning,
     this.dangerColor = AppColors.danger,
     this.size = 180,
-    this.valueFontSize = 28,
+    this.valueFontSize = 36,
     this.decimals = 0,
   });
 }

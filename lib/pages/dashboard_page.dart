@@ -123,10 +123,6 @@ class _GaugeArea extends StatelessWidget {
     unit: 'rpm',
     minValue: 0,
     maxValue: 8000,
-    warningThreshold: 6000,
-    dangerThreshold: 7400,
-    size: 220,
-    valueFontSize: 32,
   );
 
   static const _waterConfig = GaugeConfig(
@@ -134,10 +130,6 @@ class _GaugeArea extends StatelessWidget {
     unit: '°C',
     minValue: 60,
     maxValue: 130,
-    warningThreshold: 100,
-    dangerThreshold: 110,
-    size: 170,
-    valueFontSize: 26,
   );
 
   static const _oilConfig = GaugeConfig(
@@ -145,10 +137,6 @@ class _GaugeArea extends StatelessWidget {
     unit: '°C',
     minValue: 60,
     maxValue: 150,
-    warningThreshold: 120,
-    dangerThreshold: 135,
-    size: 170,
-    valueFontSize: 26,
   );
 
   @override
@@ -161,18 +149,28 @@ class _GaugeArea extends StatelessWidget {
   /// ゲージのレイアウトを組み立てる。
   /// 新しいゲージを追加する場合はここに [GaugeWidget] を追加する。
   Widget _buildGauges(OBDController obd) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        GaugeWidget(
-          config: _waterConfig,
-          value: obd.waterTemp.value?.toDouble(),
-        ),
-        GaugeWidget(config: _rpmConfig, value: obd.rpm.value?.toDouble()),
-        GaugeWidget(config: _oilConfig, value: obd.oilTemp.value?.toDouble()),
-      ],
-    );
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              GaugeWidget(
+                config: _waterConfig,
+                value: obd.waterTemp.value?.toDouble(),
+              ),
+              const SizedBox(height: 12),
+              GaugeWidget(config: _rpmConfig, value: obd.rpm.value?.toDouble()),
+              const SizedBox(height: 12),
+              GaugeWidget(
+                config: _oilConfig,
+                value: obd.oilTemp.value?.toDouble(),
+              ),
+            ],
+          ), // Closes Column
+        ), // Closes SingleChildScrollView
+      ), // Closes Padding
+    ); // Closes SafeArea
   }
 }
 
@@ -506,7 +504,7 @@ class _LogContent extends StatelessWidget {
       if (text.isEmpty) {
         return const Center(
           child: Text(
-            '（ログがまだ記録されていません）',
+            '(No logs recorded yet)',
             style: TextStyle(color: AppColors.textDisabled, fontSize: 12),
           ),
         );

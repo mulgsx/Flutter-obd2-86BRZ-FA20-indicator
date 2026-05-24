@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AC Dashboard Mockup</title>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="ios-frame.jsx"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    min-height: 100vh;
+    background: #1a1a2e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, system-ui, sans-serif;
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "rpm": 1300,
+  "ipAddress": "192.168.0.10",
+  "darkMode": false,
+  "accentColor": "#4CAF50"
+}/*EDITMODE-END*/;
+
+function App() {
+  const [tweaks, setTweaks] = React.useState(TWEAK_DEFAULTS);
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+  const [ip, setIp] = React.useState(tweaks.ipAddress);
+  const [receiving, setReceiving] = React.useState(false);
+  const [packets, setPackets] = React.useState(0);
+  const [tweaksPanelOpen, setTweaksPanelOpen] = React.useState(false);
+
+  // Tweak mode listener
+  React.useEffect(() => {
+    const handler = (e) => {
+      if (e.data?.type === '__activate_edit_mode') setTweaksPanelOpen(true);
+      if (e.data?.type === '__deactivate_edit_mode') setTweaksPanelOpen(false);
+    };
+    window.addEventListener('message', handler);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  // Simulate packet count
+  React.useEffect(() => {
+    if (!receiving) return;
+    const t = setInterval(() => setPackets((p) => p + Math.floor(Math.random() * 3 + 1)), 500);
+    return () => clearInterval(t);
+  }, [receiving]);
+
+  const dark = tweaks.darkMode;
+  const bg = dark ? '#121212' : '#F2F2F7';
+  const cardBg = dark ? '#1E1E1E' : '#fff';
+  const text = dark ? '#fff' : '#000';
+  const subText = dark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)';
+  const drawerBg = dark ? '#1C1C1E' : '#F2F2F7';
+  const headerBg = dark ? '#1C1C1E' : '#F2F2F7';
+  const inputBg = dark ? '#2C2C2E' : '#fff';
+  const borderColor = dark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)';
+
+  const rpmValue = tweaks.rpm + (receiving ? Math.floor(Math.sin(Date.now() / 1000) * 200) : 0);
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <IOSDevice width={844} height={390} dark={dark}>
+        {/* ── Main Screen ── */}
+        <div style={{
+          height: '100%',
+          background: bg,
+          display: 'flex',
+          flexDirection: 'column',
+          transition: 'filter 0.3s',
+          filter: drawerOpen ? 'brightness(0.6)' : 'none'
+        }}
+        onClick={() => drawerOpen && setDrawerOpen(false)}>
+          
+          {/* App Bar */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: '16px 16px 12px',
+            background: headerBg,
+            borderBottom: `1px solid ${borderColor}`,
+            gap: 12
+          }}>
+            {/* Hamburger */}
+            <button
+              onClick={(e) => {e.stopPropagation();setDrawerOpen((o) => !o);}}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                padding: 6, display: 'flex', flexDirection: 'column',
+                gap: 5, alignItems: 'center', justifyContent: 'center'
+              }}>
+              
+              <div style={{ width: 22, height: 2, background: text, borderRadius: 1 }} />
+              <div style={{ width: 22, height: 2, background: text, borderRadius: 1 }} />
+              <div style={{ width: 22, height: 2, background: text, borderRadius: 1 }} />
+            </button>
+            <span style={{ fontSize: 20, fontWeight: 600, color: text, letterSpacing: -0.3 }}>
+              AC Dashboard
+            </span>
+          </div>
+
+          {/* Content */}
+          <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {/* RPM Card */}
+            <div style={{
+              background: cardBg,
+              borderRadius: 14,
+              padding: '20px 22px',
+              boxShadow: dark ?
+              '0 2px 8px rgba(0,0,0,0.4)' :
+              '0 1px 4px rgba(0,0,0,0.08), 0 0 0 0.5px rgba(0,0,0,0.06)'
+            }}>
+              <div style={{ fontSize: 36, fontWeight: 700, color: text, letterSpacing: -1 }}>
+                {receiving ? rpmValue.toLocaleString() : tweaks.rpm.toLocaleString()} <span style={{ fontSize: 36, fontWeight: 700, color: text }}>RPM</span>
+              </div>
+            </div>
+
+
+          </div>
+        </div>
+
+        {/* ── Drawer ── */}
+        <div style={{
+          position: 'absolute',
+          top: 0, left: 0, bottom: 0,
+          width: 300,
+          background: drawerBg,
+          borderRadius: '0 20px 20px 0',
+          boxShadow: drawerOpen ? '4px 0 24px rgba(0,0,0,0.25)' : 'none',
+          transform: drawerOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          zIndex: 30,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden'
+        }}>
+          {/* Drawer Header */}
+          <div style={{
+            padding: '60px 20px 18px 64px',
+            borderBottom: `1px solid ${borderColor}`
+          }}>
+            <div style={{ fontSize: 22, fontWeight: 700, color: text, letterSpacing: -0.5 }}>
+              Menu
+            </div>
+          </div>
+
+          {/* Drawer Body */}
+          <div style={{ padding: '20px 20px 20px 64px', display: 'flex', flexDirection: 'column', gap: 20, flex: 1 }}>
+            {/* IP Address input */}
+            <div>
+              <div style={{
+                border: `1px solid ${borderColor}`,
+                borderRadius: 10,
+                padding: '10px 14px',
+                background: inputBg,
+                position: 'relative'
+              }}>
+                <div style={{
+                  fontSize: 11, color: subText, position: 'absolute',
+                  top: -8, left: 10, background: inputBg,
+                  padding: '0 4px', letterSpacing: 0.2
+                }}>PC IP Address</div>
+                <input
+                  value={ip}
+                  onChange={(e) => setIp(e.target.value)}
+                  style={{
+                    width: '100%', border: 'none', background: 'transparent',
+                    fontSize: 17, color: text, outline: 'none',
+                    fontFamily: 'monospace'
+                  }} />
+                
+              </div>
+            </div>
+
+            {/* Start/Stop button */}
+            <button
+              onClick={() => {
+                setReceiving((r) => !r);
+                if (!receiving) setPackets(0);
+              }}
+              style={{
+                padding: '16px',
+                borderRadius: 14,
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: 17, fontWeight: 600,
+                color: '#fff',
+                background: receiving ? '#FF3B30' : tweaks.accentColor,
+                letterSpacing: -0.3,
+                transition: 'background 0.2s'
+              }}>
+              
+              {receiving ? 'stop' : 'start'}
+            </button>
+
+            {/* Status info */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ fontSize: 14, color: text }}>
+                Received Packets: <span style={{ fontWeight: 600 }}>{packets}</span>
+              </div>
+              <div style={{
+                fontSize: 14,
+                color: receiving ? tweaks.accentColor : '#FF3B30',
+                lineHeight: 1.5
+              }}>
+                {receiving ?
+                `Status: RECEIVING from ${ip}` :
+                "Status: IDLE: Press 'Start Receiving' to connect."}
+              </div>
+            </div>
+          </div>
+
+
+        </div>
+      </IOSDevice>
+
+      {/* ── Tweaks Panel ── */}
+      {tweaksPanelOpen &&
+      <div style={{
+        position: 'fixed', bottom: 24, right: 24,
+        background: '#1e1e2e', color: '#fff',
+        borderRadius: 16, padding: 20, width: 260,
+        boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
+        zIndex: 9999, fontSize: 13
+      }}>
+          <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 16, color: '#e0e0ff' }}>Tweaks</div>
+
+          <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <span style={{ color: '#aaa' }}>Dark Mode</span>
+            <input type="checkbox" checked={tweaks.darkMode}
+          onChange={(e) => {
+            const v = { ...tweaks, darkMode: e.target.checked };
+            setTweaks(v);
+            window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { darkMode: e.target.checked } }, '*');
+          }} />
+          </label>
+
+          <label style={{ display: 'block', marginBottom: 14 }}>
+            <div style={{ color: '#aaa', marginBottom: 6 }}>RPM Value</div>
+            <input type="range" min={0} max={8000} step={100} value={tweaks.rpm}
+          style={{ width: '100%' }}
+          onChange={(e) => {
+            const v = { ...tweaks, rpm: +e.target.value };
+            setTweaks(v);
+            window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { rpm: +e.target.value } }, '*');
+          }} />
+            <div style={{ color: '#fff', textAlign: 'right', fontSize: 11 }}>{tweaks.rpm} RPM</div>
+          </label>
+
+          <label style={{ display: 'block', marginBottom: 14 }}>
+            <div style={{ color: '#aaa', marginBottom: 6 }}>Accent Color</div>
+            <input type="color" value={tweaks.accentColor}
+          onChange={(e) => {
+            const v = { ...tweaks, accentColor: e.target.value };
+            setTweaks(v);
+            window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { accentColor: e.target.value } }, '*');
+          }} />
+          </label>
+        </div>
+      }
+    </div>);
+
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
