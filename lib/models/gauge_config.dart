@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 
+/// Configuration model for the gauge widget.
+/// Use this class to create settings when adding a new gauge.
 /// ゲージウィジェットの設定モデル。
 /// 新しいゲージを追加する際はこのクラスを使って設定を作成する。
 class GaugeConfig {
@@ -8,9 +11,11 @@ class GaugeConfig {
   final double minValue;
   final double maxValue;
 
+  /// Switches to warning color at or above this value (null = no warning).
   /// この値以上で警告色に変わる（null = 警告なし）
   final double? warningThreshold;
 
+  /// Switches to danger color at or above this value (null = no danger).
   /// この値以上で危険色に変わる（null = 危険なし）
   final double? dangerThreshold;
 
@@ -18,13 +23,13 @@ class GaugeConfig {
   final Color warningColor;
   final Color dangerColor;
 
-  /// ゲージの直径（px）
+  /// Gauge diameter in pixels / ゲージの直径（px）
   final double size;
 
-  /// 値表示のフォントサイズ
+  /// Font size for the value display / 値表示のフォントサイズ
   final double valueFontSize;
 
-  /// 小数点以下の桁数
+  /// Number of decimal places / 小数点以下の桁数
   final int decimals;
 
   const GaugeConfig({
@@ -34,9 +39,9 @@ class GaugeConfig {
     required this.maxValue,
     this.warningThreshold,
     this.dangerThreshold,
-    this.normalColor = const Color(0xFF4CAF50),
-    this.warningColor = const Color(0xFFFF9800),
-    this.dangerColor = const Color(0xFFF44336),
+    this.normalColor = AppColors.success,
+    this.warningColor = AppColors.warning,
+    this.dangerColor = AppColors.danger,
     this.size = 180,
     this.valueFontSize = 28,
     this.decimals = 0,

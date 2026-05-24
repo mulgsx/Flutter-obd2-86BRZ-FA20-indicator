@@ -1,3 +1,4 @@
+/// Structured debug log entry for one OBD parse result.
 /// OBD パース1回分の構造化デバッグログエントリ
 class DebugLogEntry {
   final DateTime timestamp;
@@ -15,6 +16,7 @@ class DebugLogEntry {
   final bool success;
   final String? errorMessage;
 
+  /// Pre-formatted multi-line text for the log panel display.
   /// ログパネル表示用のフォーマット済みテキスト（複数行）
   final String formattedText;
 
@@ -35,7 +37,7 @@ class DebugLogEntry {
 
   String toPlainText() => formattedText;
 
-  /// CSV 1行（ヘッダなし）
+  /// One CSV row (no header) / CSV 1行（ヘッダなし）
   String toCSV() {
     return [
       _esc(timestamp.toIso8601String()),

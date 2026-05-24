@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'pages/scan_ble_page.dart';
+import 'theme/app_colors.dart';
 
 Future<void> _requestPermissions() async {
   await [
@@ -17,19 +18,19 @@ Future<void> _requestPermissions() async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Bluetooth・位置情報の許可をリクエスト
+  // Request permission for Bluetooth and location services / Bluetooth・位置情報の許可をリクエスト
   await _requestPermissions();
 
-  // 横画面固定
+  // Lock to landscape orientation / 横画面固定
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.landscapeLeft,
     DeviceOrientation.landscapeRight,
   ]);
 
-  // ステータスバー・ナビゲーションバーを非表示（時刻表示なし）
+  // Hide the status bar and navigation bar / ステータスバー・ナビゲーションバーを非表示
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
-  // スリープ防止
+  // Prevent sleep / スリープ防止
   await WakelockPlus.enable();
 
   runApp(const MyApp());
@@ -44,11 +45,11 @@ class MyApp extends StatelessWidget {
       title: 'BRZ ZC6 OBD2 Monitor',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0D1117),
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFF58A6FF),
-          surface: Color(0xFF161B22),
+        brightness: Brightness.light,
+        scaffoldBackgroundColor: AppColors.background,
+        colorScheme: const ColorScheme.light(
+          primary: AppColors.primary,
+          surface: AppColors.surface,
         ),
         useMaterial3: true,
       ),

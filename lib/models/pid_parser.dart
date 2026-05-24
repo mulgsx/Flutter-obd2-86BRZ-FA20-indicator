@@ -1,3 +1,4 @@
+/// CSV-based PID definition (corresponds to Parameter.cs in ParsePID).
 /// CSV ベース PID 定義（ParsePID の Parameter.cs に対応）
 class PIDDefinition {
   final int pid;
@@ -26,8 +27,10 @@ class PIDDefinition {
       '$shortName [$unit])';
 }
 
+/// Parses PID definitions from CSV (ported from ParseDefCsv.cs).
 /// CSV から PID 定義をパースする（ParseDefCsv.cs 移植）
 ///
+/// Expected CSV columns (tab or comma separated):
 /// 期待する CSV 列（タブまたはカンマ区切り）:
 ///   PID, Name_Short, Name_Full, Length, Units[, Formula, MinDisplay, MaxDisplay]
 class PIDCSVParser {
@@ -42,7 +45,7 @@ class PIDCSVParser {
         final def = _parseLine(line);
         if (def != null) result.add(def);
       } catch (_) {
-        // 不正な行はスキップ
+        // Skip malformed lines / 不正な行はスキップ
       }
     }
     return result;
@@ -74,12 +77,15 @@ class PIDCSVParser {
   }
 }
 
+/// OBD response byte parsing utilities (ported from ParseSupportResponses.cs).
 /// OBD レスポンスのバイト解析ユーティリティ（ParseSupportResponses.cs 移植）
 class OBDResponseParser {
+  /// Converts bytes[index..index+count-1] to an integer in big-endian order.
+  /// count must be 1–8.
   /// ビッグエンディアンで bytes[index..index+count-1] を整数に変換。
   /// count は 1〜8。
   ///
-  /// 例: bytes=[0x40,0x79,0xC0,0x01], index=0, count=4 → 0x4079C001
+  /// Example / 例: bytes=[0x40,0x79,0xC0,0x01], index=0, count=4 → 0x4079C001
   static int parseUIntBigEndian(List<int> bytes, int index, int count) {
     if (count < 1 || count > 8) {
       throw ArgumentError.value(count, 'count', '1 <= count <= 8 required');
@@ -95,9 +101,10 @@ class OBDResponseParser {
     return result;
   }
 
+  /// Converts a space-separated hex string to a list of bytes.
   /// 空白区切りの16進数文字列をバイトリストに変換。
   ///
-  /// 例: "7E8 FF C0 00 03" → [0x7E8, 0xFF, 0xC0, 0x00, 0x03]
+  /// Example / 例: "7E8 FF C0 00 03" → [0x7E8, 0xFF, 0xC0, 0x00, 0x03]
   static List<int> parseHexBytes(String response) {
     return response
         .split(RegExp(r'\s+'))
@@ -107,13 +114,15 @@ class OBDResponseParser {
   }
 }
 
+/// OBD support bitmap processing (ported from Support.cs).
 /// OBD サポートビットマップ処理（Support.cs 移植）
 class OBDSupport {
+  /// Returns whether the specified PID is supported by the ECU's supportValue (32-bit).
+  /// bitNr is the 1-based bit position per OBD-II standard (1=MSB, 32=LSB).
   /// ECU からの supportValue (32bit) で指定 PID がサポートされているか判定。
-  ///
   /// bitNr は OBD-II 標準の 1-based ビット位置 (1=MSB, 32=LSB)。
   ///
-  /// 例: supportValue=0x80000000, bitNr=1 → true
+  /// Example / 例: supportValue=0x80000000, bitNr=1 → true
   static bool isPIDSupported(int supportValue, int bitNr) {
     if (bitNr < 1 || bitNr > 32) {
       throw ArgumentError.value(bitNr, 'bitNr', '1 <= bitNr <= 32 required');
@@ -121,9 +130,10 @@ class OBDSupport {
     return (supportValue & (1 << (32 - bitNr))) != 0;
   }
 
+  /// Returns all PIDs supported by supportValue, relative to startPID.
   /// supportValue でサポートされている全 PID を startPID 相対で返す。
   ///
-  /// 例: startPID=0x0000, supportValue=0x80000000 → [0x0001]
+  /// Example / 例: startPID=0x0000, supportValue=0x80000000 → [0x0001]
   static List<int> getSupportedPIDs(int supportValue, int startPID) {
     final list = <int>[];
     for (int bitNr = 1; bitNr <= 32; bitNr++) {

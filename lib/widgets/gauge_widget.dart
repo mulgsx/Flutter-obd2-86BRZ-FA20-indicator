@@ -1,12 +1,16 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../models/gauge_config.dart';
+import '../theme/app_colors.dart';
 
+/// Reusable automotive-style gauge widget.
+/// Display settings can be changed via [GaugeConfig].
 /// 再利用可能な自動車メーター風ゲージウィジェット。
 /// [GaugeConfig] で表示設定を変更可能。
 class GaugeWidget extends StatelessWidget {
   final GaugeConfig config;
 
+  /// Value to display. Shows "--" when null.
   /// 表示する値。null の場合は "--" を表示。
   final double? value;
 
@@ -21,7 +25,7 @@ class GaugeWidget extends StatelessWidget {
         Text(
           config.label,
           style: const TextStyle(
-            color: Color(0xFFB0BEC5),
+            color: AppColors.gaugeLabel,
             fontSize: 12,
             letterSpacing: 2,
             fontWeight: FontWeight.w500,
@@ -52,7 +56,7 @@ class GaugeWidget extends StatelessWidget {
                     Text(
                       config.unit,
                       style: const TextStyle(
-                        color: Color(0xFF78909C),
+                        color: AppColors.gaugeUnit,
                         fontSize: 11,
                         letterSpacing: 1,
                       ),
@@ -68,7 +72,7 @@ class GaugeWidget extends StatelessWidget {
   }
 
   Color _getValueColor(double? value, GaugeConfig config) {
-    if (value == null) return const Color(0xFF37474F);
+    if (value == null) return AppColors.gaugeNull;
     final dangerTh = config.dangerThreshold;
     final warnTh = config.warningThreshold;
     if (dangerTh != null && value >= dangerTh) return config.dangerColor;
@@ -81,7 +85,7 @@ class _GaugePainter extends CustomPainter {
   final GaugeConfig config;
   final double? value;
 
-  // 150° スタート、240° スイープ（メーター風）
+  // 150° start, 240° sweep (automotive meter style) / 150° スタート、240° スイープ（メーター風）
   static const double _startDeg = 150.0;
   static const double _sweepDeg = 240.0;
   static const double _startRad = _startDeg * math.pi / 180.0;
@@ -102,7 +106,7 @@ class _GaugePainter extends CustomPainter {
       _sweepRad,
       false,
       Paint()
-        ..color = const Color(0xFF1E272E)
+        ..color = AppColors.gaugeTrack
         ..style = PaintingStyle.stroke
         ..strokeWidth = 14
         ..strokeCap = StrokeCap.round,
@@ -171,7 +175,7 @@ class _GaugePainter extends CustomPainter {
       tail,
       tip,
       Paint()
-        ..color = Colors.white
+        ..color = AppColors.gaugeNeedle
         ..strokeWidth = 2
         ..strokeCap = StrokeCap.round,
     );
@@ -196,8 +200,7 @@ class _GaugePainter extends CustomPainter {
         outer,
         inner,
         Paint()
-          ..color =
-              isMajor ? const Color(0xFF546E7A) : const Color(0xFF37474F)
+          ..color = isMajor ? AppColors.gaugeMajorTick : AppColors.gaugeMinorTick
           ..strokeWidth = isMajor ? 1.5 : 1.0,
       );
     }

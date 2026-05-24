@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:get/get.dart';
 import '../models/debug_log.dart';
 
+/// Accumulates OBD parse logs and exports them in various formats.
+/// Held as a field on OBDController (no GetxService needed).
 /// OBD パースログを蓄積し、各形式でエクスポートする。
 /// OBDController のフィールドとして保持する（GetxService 不要）。
 class DebugLogManager {
@@ -22,7 +24,7 @@ class DebugLogManager {
       debugLogs.where((l) => l.category == category).toList();
 
   String exportAsPlainText() {
-    if (debugLogs.isEmpty) return '（ログなし）';
+    if (debugLogs.isEmpty) return '(No logs)';
     final buf = StringBuffer()
       ..writeln('=== BRZ OBD2 Debug Log Export ===')
       ..writeln('Exported: ${DateTime.now().toIso8601String()}')

@@ -7,13 +7,15 @@ import '../utils/obd_debug_formatter.dart';
 
 enum OBDStatus { disconnected, connecting, initializing, polling, error }
 
+/// Main OBD communication controller.
+/// Manages the state machine: connect → AT init → PID polling.
 /// OBD通信のメインコントローラー。
 /// 接続 → ATコマンド初期化 → PIDポーリング の状態機械を管理する。
 class OBDController extends GetxController {
   final BluetoothDevice? device;
   OBDController(this.device);
 
-  // --- 観測可能な状態 ---
+  // --- Observable state / 観測可能な状態 ---
   final status = OBDStatus.disconnected.obs;
   final statusMessage = ''.obs;
   final rpm = Rxn<int>();
@@ -21,7 +23,7 @@ class OBDController extends GetxController {
   final oilTemp = Rxn<int>();
   final logs = <String>[].obs;
 
-  // --- 内部状態 ---
+  // --- Internal state / 内部状態 ---
   final debugLogManager = DebugLogManager();
   BluetoothCharacteristic? _writeChar;
   BluetoothCharacteristic? _notifyChar;
@@ -29,12 +31,14 @@ class OBDController extends GetxController {
   final StringBuffer _buffer = StringBuffer();
   bool _polling = false;
 
+  /// PID list to poll cyclically (BRZ ZC6 specific).
+  /// Edit this list to add or change PIDs.
   /// ポーリング対象のPIDリスト（BRZ ZC6対応）。
   /// 追加・変更するにはこのリストを編集する。
   final List<String> _pidQueue = [
     '010C\r', // RPM
-    '0105\r', // 冷却水温
-    '2101\r', // 油温（Mode 21 Subaru固有 + ATSH 7E0）
+    '0105\r', // Water temp / 冷却水温
+    '2101\r', // Oil temp — Mode 21 Subaru-specific + ATSH 7E0 / 油温（Mode 21 Subaru固有 + ATSH 7E0）
   ];
   int _pidIndex = 0;
 
@@ -52,21 +56,21 @@ class OBDController extends GetxController {
   }
 
   // ---------------------------------------------------------------------------
-  // 接続・初期化
+  // Connection & Initialization / 接続・初期化
   // ---------------------------------------------------------------------------
 
   Future<void> _start() async {
     try {
       status.value = OBDStatus.connecting;
-      _log('デバイスに接続中...');
+      _log('Connecting to the device. デバイスに接続中...');
       await device!.connect(timeout: const Duration(seconds: 15));
       await device!.requestMtu(256);
 
-      _log('サービスを探索中...');
+      _log('Browsing services サービスを探索中...');
       final services = await device!.discoverServices();
 
       if (!_findCharacteristics(services)) {
-        _setError('対応サービスが見つかりません (FFF0/FFE0)');
+        _setError('No matching service found 対応サービスが見つかりません (FFF0/FFE0)');
         return;
       }
 
@@ -74,18 +78,19 @@ class OBDController extends GetxController {
       _notifyChar!.onValueReceived.listen(_onData);
 
       status.value = OBDStatus.initializing;
-      _log('ELM327を初期化中...');
+      _log('Initializing ELM327...');
       await _sendInitSequence();
 
       status.value = OBDStatus.polling;
-      _log('ポーリング開始');
+      _log('Polling Begins');
       _polling = true;
       _pollingLoop();
     } catch (e) {
-      _setError('接続エラー: $e');
+      _setError('Connection error: $e');
     }
   }
 
+  /// Search for characteristics in order: FFF0 → FFE0 → all services.
   /// FFF0 → FFE0 → 全サービスの順でキャラクタリスティックを探索する。
   bool _findCharacteristics(List<BluetoothService> services) {
     for (final targetUuid in ['fff0', 'ffe0']) {
@@ -105,7 +110,7 @@ class OBDController extends GetxController {
         if (_notifyChar != null && _writeChar != null) return true;
       }
     }
-    // フォールバック: 全サービスを探索
+    // Fallback: search all services / フォールバック: 全サービスを探索
     for (final service in services) {
       for (final char in service.characteristics) {
         if (char.properties.notify && _notifyChar == null) _notifyChar = char;
@@ -119,7 +124,7 @@ class OBDController extends GetxController {
   }
 
   // ---------------------------------------------------------------------------
-  // BLEデータ受信
+  // BLE Data Reception / BLEデータ受信
   // ---------------------------------------------------------------------------
 
   void _onData(List<int> data) {
@@ -132,6 +137,7 @@ class OBDController extends GetxController {
     final parts = buffered.split('>');
     final response = parts.first.trim();
     _buffer.clear();
+    // Buffer any data remaining after '>' for the next read
     // '>' の後に残ったデータがあれば次のバッファへ
     if (parts.length > 1) _buffer.write(parts.sublist(1).join('>'));
 
@@ -145,7 +151,7 @@ class OBDController extends GetxController {
   }
 
   // ---------------------------------------------------------------------------
-  // コマンド送信
+  // Command Transmission / コマンド送信
   // ---------------------------------------------------------------------------
 
   Future<String?> _sendCommand(
@@ -182,7 +188,7 @@ class OBDController extends GetxController {
   }
 
   // ---------------------------------------------------------------------------
-  // PIDポーリングループ
+  // PID Polling Loop / PIDポーリングループ
   // ---------------------------------------------------------------------------
 
   Future<void> _pollingLoop() async {
@@ -192,6 +198,7 @@ class OBDController extends GetxController {
 
       String? response;
       if (cmd == '2101\r') {
+        // Mode 21 requires an ECU-specific header — temporarily set it for this command only
         // Mode 21はECU固有ヘッダが必要なため、このコマンドのみ一時的に変更
         await _sendCommand(
           'ATSH 7E0\r',
@@ -201,10 +208,11 @@ class OBDController extends GetxController {
           cmd,
           timeout: const Duration(milliseconds: 3000),
         );
+        // Reset to default header / デフォルトに戻す
         await _sendCommand(
           'ATSH 7DF\r',
           timeout: const Duration(milliseconds: 500),
-        ); // デフォルトに戻す
+        );
       } else {
         response = await _sendCommand(
           cmd,
@@ -241,7 +249,7 @@ class OBDController extends GetxController {
       } else if (command == '0105\r') {
         waterTemp.value = _parseTemp(trimmed, rawParts, parts, startIndex);
       } else if (command == '2101\r') {
-        _log('OIL RAW: $trimmed'); // バイト位置確認用
+        _log('OIL RAW: $trimmed'); // For byte position verification / バイト位置確認用
         oilTemp.value = _parseOilTemp(trimmed, rawParts, parts, startIndex);
       }
     } catch (e) {
@@ -250,7 +258,7 @@ class OBDController extends GetxController {
   }
 
   // ---------------------------------------------------------------------------
-  // パーサー（BRZ ZC6対応）
+  // Parsers (BRZ ZC6 specific) / パーサー（BRZ ZC6対応）
   // ---------------------------------------------------------------------------
 
   /// RPM: (A*256 + B) / 4
@@ -299,7 +307,7 @@ class OBDController extends GetxController {
     }
   }
 
-  /// 冷却水温: A - 40 [℃]
+  /// Water temperature: A - 40 [°C] / 冷却水温: A - 40 [℃]
   int _parseTemp(
     String response,
     List<String> rawParts,
@@ -342,8 +350,10 @@ class OBDController extends GetxController {
     }
   }
 
+  /// BRZ ZC6 oil temperature Mode 21: A - 40 [°C]
+  /// Reads from the normalized [61, 01, DATA0, ...] payload at data byte offset 28.
   /// BRZ ZC6 油温 Mode 21: A - 40 [℃]
-  /// 正規化済みの [61, 01, DATA0, ...] から DATA4 を読む。
+  /// 正規化済みの [61, 01, DATA0, ...] からデータバイトオフセット28を読む。
   int _parseOilTemp(
     String response,
     List<String> rawParts,
@@ -398,15 +408,16 @@ class OBDController extends GetxController {
   List<String> _splitHex(String response) =>
       response.split(' ').where((s) => s.isNotEmpty).toList();
 
-  /// モード01レスポンスのデータ開始インデックスを返す。
-  /// OBDResponseCleaner によってあらかじめ余分なヘッダやマルチフレームコードが削ぎ落とされ、
-  /// 配列の先頭が必ず [61, 01, ...] などの形に統一されるため、固定で 2 を返す。
+  /// Returns the data start index after OBDResponseCleaner normalization.
+  /// After cleaning, the array always starts with [service, pid, DATA...], so 2 is fixed.
+  /// OBDResponseCleaner正規化後のデータ開始インデックスを返す。
+  /// クリーン後は常に [service, pid, DATA...] の形になるため固定で2を返す。
   int _dataStartIndex(List<String> parts, String pid) {
     return 2;
   }
 
   // ---------------------------------------------------------------------------
-  // ユーティリティ
+  // Utilities / ユーティリティ
   // ---------------------------------------------------------------------------
 
   void _setError(String msg) {

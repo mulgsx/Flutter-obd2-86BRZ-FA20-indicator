@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:get/get.dart';
 import '../controllers/scanresult_controller.dart';
+import '../theme/app_colors.dart';
 import 'dashboard_page.dart';
 
+/// BLE device selection screen shown after Bluetooth adapter is confirmed on.
+/// Scans for nearby ELM327 adapters; tap a result to connect and open the dashboard.
+/// BLE デバイス選択画面（Bluetooth ON 確認後に表示）。
+/// 近くの ELM327 アダプターをスキャンし、タップで接続・ダッシュボードへ遷移する。
 class FindDevicesPage extends StatelessWidget {
   const FindDevicesPage({super.key});
 
@@ -11,26 +16,29 @@ class FindDevicesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final ctrl = Get.put(ScanResultController());
 
-    // 初回起動時に権限確認＆スキャン開始
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ctrl.requestPermissionsAndScan();
     });
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1117),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF161B22),
+        backgroundColor: AppColors.surface,
         title: const Text(
-          'BRZ OBD2 — デバイス選択',
-          style: TextStyle(color: Colors.white, fontSize: 16, letterSpacing: 1),
+          '86BRZ FA20 OBD2 — Select Device',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 16,
+            letterSpacing: 1,
+          ),
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
         actions: [
           TextButton(
             onPressed: () => Get.to(() => const DashboardPage()),
             child: const Text(
-              'デモ',
-              style: TextStyle(color: Colors.white54, fontSize: 13),
+              'DEMO',
+              style: TextStyle(color: AppColors.textTertiary, fontSize: 13),
             ),
           ),
         ],
@@ -41,9 +49,9 @@ class FindDevicesPage extends StatelessWidget {
             child: Padding(
               padding: EdgeInsets.all(32),
               child: Text(
-                'Bluetooth・位置情報の権限が必要です。\n「許可」を選択してください。',
+                'Bluetooth・位置情報の権限が必要です。\n「許可」を選択してください。\nBluetooth and location permissions are required. \nPlease select “Allow.”',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white54, fontSize: 14),
+                style: TextStyle(color: AppColors.textTertiary, fontSize: 14),
               ),
             ),
           );
@@ -54,15 +62,22 @@ class FindDevicesPage extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.symmetric(vertical: 8),
             children: [
-              _sectionHeader('スキャン結果'),
+              _sectionHeader('Scan Results'),
               if (ctrl.scanResultList.isEmpty)
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: Text(
-                    'デバイスが見つかりません',
-                    style: TextStyle(color: Colors.white38, fontSize: 13),
+                    'Device not found',
+                    style: TextStyle(
+                      color: AppColors.textDisabled,
+                      fontSize: 13,
+                    ),
                   ),
                 ),
+              // Spread operator: expands all scan results into the children list as _DeviceTile widgets.
+              // Empty list adds nothing; non-empty list adds one tile per device.
+              // スプレッド演算子: スキャン結果を _DeviceTile に変換して children へ展開する。
+              // リストが空なら何も追加されず、要素があればデバイス数分のタイルが追加される。
               ...ctrl.scanResultList.map((r) => _DeviceTile(result: r)),
             ],
           ),
@@ -72,17 +87,17 @@ class FindDevicesPage extends StatelessWidget {
         () => FloatingActionButton.extended(
           backgroundColor: ctrl.isScanning.value
               ? Colors.red.shade700
-              : const Color(0xFF1F6FEB),
+              : AppColors.primaryVariant,
           onPressed: () {
             ctrl.isScanning.value ? ctrl.stopScan() : ctrl.startScan();
           },
           icon: Icon(
             ctrl.isScanning.value ? Icons.stop : Icons.search,
-            color: Colors.white,
+            color: AppColors.textPrimary,
           ),
           label: Text(
-            ctrl.isScanning.value ? 'スキャン停止' : 'スキャン開始',
-            style: const TextStyle(color: Colors.white),
+            ctrl.isScanning.value ? 'Stop scanning' : 'Start scanning',
+            style: const TextStyle(color: AppColors.textPrimary),
           ),
         ),
       ),
@@ -94,7 +109,7 @@ class FindDevicesPage extends StatelessWidget {
     child: Text(
       title,
       style: const TextStyle(
-        color: Color(0xFF58A6FF),
+        color: AppColors.primary,
         fontSize: 12,
         letterSpacing: 2,
         fontWeight: FontWeight.w600,
@@ -130,12 +145,11 @@ class _DeviceTileState extends State<_DeviceTile> {
       await Get.to(() => DashboardPage(device: widget.result.device));
     } catch (e) {
       if (!mounted) return;
-      // disconnect() によるキャンセル時は SnackBar を出さない
       final msg = e.toString();
       if (!msg.contains('disconnected') && !msg.contains('cancel')) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('接続失敗: $e'),
+            content: Text('Connection failed: $e'),
             backgroundColor: Colors.red.shade700,
           ),
         );
@@ -155,31 +169,31 @@ class _DeviceTileState extends State<_DeviceTile> {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      tileColor: const Color(0xFF161B22),
+      tileColor: AppColors.surface,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      leading: const Icon(Icons.bluetooth, color: Color(0xFF58A6FF)),
+      leading: const Icon(Icons.bluetooth, color: AppColors.primary),
       title: Text(
         _deviceName,
         style: const TextStyle(
-          color: Colors.white,
+          color: AppColors.textPrimary,
           fontWeight: FontWeight.w600,
         ),
       ),
       subtitle: Text(
         'RSSI: ${widget.result.rssi} dBm  •  ${widget.result.device.remoteId.str}',
-        style: const TextStyle(color: Colors.white38, fontSize: 11),
+        style: const TextStyle(color: AppColors.textDisabled, fontSize: 11),
       ),
       trailing: _connecting
+          // Loading Icon
           ? const SizedBox(
-              // 接続中アイコン（スピナー）
               width: 24,
               height: 24,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                color: Color(0xFF58A6FF),
+                color: AppColors.primary,
               ),
             )
-          : const Icon(Icons.chevron_right, color: Colors.white38),
+          : const Icon(Icons.chevron_right, color: AppColors.textDisabled),
       onTap: _connecting ? _cancelConnect : _connect,
     );
   }
