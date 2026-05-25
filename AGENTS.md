@@ -4,7 +4,7 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 ## Project Overview
 
-Subaru BRZ ZC6 (FA20 engine) specialized OBD2 BLE monitor app built with Flutter. Connects to an ELM327 BLE adapter and displays real-time RPM, water temperature, and oil temperature on a dashboard with automotive-style gauges.
+Subaru BRZ ZC6 / Toyota 86 (FA20 engine) specialized OBD2 BLE monitor app built with Flutter. Connects to an ELM327 BLE adapter and displays real-time RPM, water temperature, and oil temperature on a dashboard with automotive-style gauges.
 
 ## Commands
 

@@ -42,7 +42,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'BRZ ZC6 OBD2 Monitor',
+      title: '86BRZ FA20 OBD2 Monitor',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.light,

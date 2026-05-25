@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Subaru BRZ ZC6 (FA20 engine) specialized OBD2 BLE monitor app built with Flutter. Connects to an ELM327 BLE adapter and displays real-time RPM, water temperature, and oil temperature on a dashboard with automotive-style gauges.
+Subaru BRZ ZC6 / Toyota 86 (FA20 engine) specialized OBD2 BLE monitor app built with Flutter. Connects to an ELM327 BLE adapter and displays real-time RPM, water temperature, and oil temperature on a dashboard with automotive-style gauges.
 
 ## Commands
 
@@ -78,7 +78,7 @@ After cleaning, data bytes always start at index 2 (service byte at [0], PID ech
 **Formulas:**
 - RPM (`010C`): `(parts[2]*256 + parts[3]) / 4`
 - Water temp (`0105`): `parts[2] - 40`
-- Oil temp (`2101`): `parts[2 + 28] - 40` (BRZ ZC6 / FA20 — oil temp is at data byte offset 28 in the Mode 21 payload)
+- Oil temp (`2101`): `parts[2 + 28] - 40` (86BRZ / FA20 — oil temp is at data byte offset 28 in the Mode 21 payload)
 
 ## BLE Protocol Details
 

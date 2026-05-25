@@ -31,9 +31,9 @@ class OBDController extends GetxController {
   final StringBuffer _buffer = StringBuffer();
   bool _polling = false;
 
-  /// PID list to poll cyclically (BRZ ZC6 specific).
+  /// PID list to poll cyclically (86BRZ FA20 specific).
   /// Edit this list to add or change PIDs.
-  /// ポーリング対象のPIDリスト（BRZ ZC6対応）。
+  /// ポーリング対象のPIDリスト（86BRZ FA20 対応）。
   /// 追加・変更するにはこのリストを編集する。
   final List<String> _pidQueue = [
     '010C\r', // RPM
@@ -258,7 +258,7 @@ class OBDController extends GetxController {
   }
 
   // ---------------------------------------------------------------------------
-  // Parsers (BRZ ZC6 specific) / パーサー（BRZ ZC6対応）
+  // Parsers (86BRZ FA20 specific) / パーサー（86BRZ FA20対応）
   // ---------------------------------------------------------------------------
 
   /// RPM: (A*256 + B) / 4
@@ -350,9 +350,9 @@ class OBDController extends GetxController {
     }
   }
 
-  /// BRZ ZC6 oil temperature Mode 21: A - 40 [°C]
+  /// 86BRZ FA20 oil temperature Mode 21: A - 40 [°C]
   /// Reads from the normalized [61, 01, DATA0, ...] payload at data byte offset 28.
-  /// BRZ ZC6 油温 Mode 21: A - 40 [℃]
+  /// 86BRZ FA20 油温 Mode 21: A - 40 [℃]
   /// 正規化済みの [61, 01, DATA0, ...] からデータバイトオフセット28を読む。
   int _parseOilTemp(
     String response,
