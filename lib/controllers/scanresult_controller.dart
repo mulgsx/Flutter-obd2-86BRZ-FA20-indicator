@@ -32,7 +32,22 @@ class ScanResultController extends GetxController {
     scanResultList.clear();
     FlutterBluePlus.startScan(timeout: const Duration(seconds: 15));
     FlutterBluePlus.scanResults.listen((results) {
-      scanResultList.assignAll(results);
+      // Sort so devices whose name contains "OBD" appear at the top of the list.
+      // "OBD" を含むデバイス名をリストの先頭に並べる。
+      final sorted = [...results]..sort((a, b) {
+        final aName = a.device.platformName.isNotEmpty
+            ? a.device.platformName
+            : a.advertisementData.advName;
+        final bName = b.device.platformName.isNotEmpty
+            ? b.device.platformName
+            : b.advertisementData.advName;
+        final aIsObd = aName.toUpperCase().contains('OBD');
+        final bIsObd = bName.toUpperCase().contains('OBD');
+        if (aIsObd && !bIsObd) return -1;
+        if (!aIsObd && bIsObd) return 1;
+        return 0;
+      });
+      scanResultList.assignAll(sorted);
     });
   }
 
