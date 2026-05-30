@@ -120,10 +120,11 @@ class _GaugeArea extends StatelessWidget {
 
       return LayoutBuilder(
         builder: (ctx, constraints) {
-          final baseW = (constraints.maxWidth - 80) / (2 + 1.2);
+          const gap = 8.0;
+          final baseW = (constraints.maxWidth - gap * 2) / (2 + 1.2);
           final baseH = constraints.maxHeight;
           return Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(
