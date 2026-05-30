@@ -27,34 +27,40 @@ class TakoTheme {
 
   const TakoTheme({
     required this.track,
-    required this.headLight, required this.headMid, required this.headDark,
-    required this.headHotLight, required this.headHotMid, required this.headHotDark,
-    required this.body, required this.spot,
-    required this.beak, required this.beakCrease, required this.counterStroke,
-    required this.aura, required this.brow,
-    required this.mouthOuter, required this.mouthOuterStroke,
+    required this.headLight,
+    required this.headMid,
+    required this.headDark,
+    required this.headHotLight,
+    required this.headHotMid,
+    required this.headHotDark,
+    required this.body,
+    required this.spot,
+    required this.beak,
+    required this.beakCrease,
+    required this.counterStroke,
+    required this.aura,
+    required this.brow,
+    required this.mouthOuter,
+    required this.mouthOuterStroke,
   });
 
   static const red = TakoTheme(
     track: Color(0xFF22D3EE),
-    headLight: Color(0xFFEE4444), headMid: Color(0xFFCC1A1A), headDark: Color(0xFF8A0A0A),
-    headHotLight: Color(0xFFFF6060), headHotMid: Color(0xFFEE2020), headHotDark: Color(0xFFAA0A0A),
-    body: Color(0xFFCC1A1A), spot: Color(0xFFE87030),
-    beak: Color(0xFFF0921A), beakCrease: Color(0xFFB85A0A),
+    headLight: Color(0xFFEE4444),
+    headMid: Color(0xFFCC1A1A),
+    headDark: Color(0xFF8A0A0A),
+    headHotLight: Color(0xFFFF6060),
+    headHotMid: Color(0xFFEE2020),
+    headHotDark: Color(0xFFAA0A0A),
+    body: Color(0xFFCC1A1A),
+    spot: Color(0xFFE87030),
+    beak: Color(0xFFF0921A),
+    beakCrease: Color(0xFFB85A0A),
     counterStroke: Color(0xFF5B21B6),
-    aura: Color(0x2EC81E1E), brow: Color(0xFF6A0808),
-    mouthOuter: Color(0xFFC04820), mouthOuterStroke: Color(0xFF7A1C06),
-  );
-
-  static const amber = TakoTheme(
-    track: Color(0xFF22D3EE),
-    headLight: Color(0xFFF4B860), headMid: Color(0xFFD18A1C), headDark: Color(0xFF7A4A08),
-    headHotLight: Color(0xFFFF6060), headHotMid: Color(0xFFEE2020), headHotDark: Color(0xFFAA0A0A),
-    body: Color(0xFFC98318), spot: Color(0xFFFFD97A),
-    beak: Color(0xFFFF8B3A), beakCrease: Color(0xFF8A3A08),
-    counterStroke: Color(0xFF7A4A08),
-    aura: Color(0x38D28C1E), brow: Color(0xFF5A3208),
-    mouthOuter: Color(0xFF8A4A10), mouthOuterStroke: Color(0xFF5A2C06),
+    aura: Color(0x2EC81E1E),
+    brow: Color(0xFF6A0808),
+    mouthOuter: Color(0xFFC04820),
+    mouthOuterStroke: Color(0xFF7A1C06),
   );
 }
 
@@ -71,11 +77,15 @@ class TakoGaugeWidget extends StatefulWidget {
   const TakoGaugeWidget({
     super.key,
     required this.value,
-    required this.min, required this.max,
-    required this.redline, required this.limit,
-    required this.label, required this.unit,
+    required this.min,
+    required this.max,
+    required this.redline,
+    required this.limit,
+    required this.label,
+    required this.unit,
     required this.theme,
-    required this.majorStep, required this.minorStep,
+    required this.majorStep,
+    required this.minorStep,
     this.labelDiv = 1,
     this.scaleLabel,
   });
@@ -92,8 +102,14 @@ class _TakoGaugeWidgetState extends State<TakoGaugeWidget>
   @override
   void initState() {
     super.initState();
-    _timeCtrl = AnimationController(vsync: this, duration: const Duration(seconds: 10))..repeat();
-    _blinkCtrl = AnimationController(vsync: this, duration: const Duration(seconds: 4))..repeat();
+    _timeCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 10),
+    )..repeat();
+    _blinkCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    )..repeat();
   }
 
   @override
@@ -128,10 +144,13 @@ class _TakoGaugeWidgetState extends State<TakoGaugeWidget>
             builder: (context2, child2) => CustomPaint(
               painter: _TakoGaugePainter(
                 value: value,
-                min: widget.min, max: widget.max,
-                redline: widget.redline, limit: widget.limit,
+                min: widget.min,
+                max: widget.max,
+                redline: widget.redline,
+                limit: widget.limit,
                 theme: widget.theme,
-                majorStep: widget.majorStep, minorStep: widget.minorStep,
+                majorStep: widget.majorStep,
+                minorStep: widget.minorStep,
                 labelDiv: widget.labelDiv,
                 scaleLabel: widget.scaleLabel,
                 timePhase: _timeCtrl.value,
@@ -154,7 +173,11 @@ class _ValueReadout extends StatelessWidget {
   final String unit;
   final bool isRed;
 
-  const _ValueReadout({required this.value, required this.unit, required this.isRed});
+  const _ValueReadout({
+    required this.value,
+    required this.unit,
+    required this.isRed,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -171,14 +194,18 @@ class _ValueReadout extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                   color: color,
                   height: 1,
-                  shadows: isRed ? [Shadow(color: const Color(0xFFEF4444), blurRadius: 14)] : null,
+                  shadows: isRed
+                      ? [Shadow(color: const Color(0xFFEF4444), blurRadius: 14)]
+                      : null,
                 ),
               ),
               TextSpan(
                 text: ' $unit',
                 style: GoogleFonts.orbitron(
                   fontSize: 13,
-                  color: isRed ? const Color(0x88EF4444) : const Color(0xFF4A6E90),
+                  color: isRed
+                      ? const Color(0x88EF4444)
+                      : const Color(0xFF4A6E90),
                   fontWeight: FontWeight.w400,
                 ),
               ),
@@ -199,11 +226,18 @@ class _TakoGaugePainter extends CustomPainter {
   final double timePhase, blinkPhase;
 
   const _TakoGaugePainter({
-    required this.value, required this.min, required this.max,
-    required this.redline, required this.limit,
-    required this.theme, required this.majorStep, required this.minorStep,
-    this.labelDiv = 1, this.scaleLabel,
-    required this.timePhase, required this.blinkPhase,
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.redline,
+    required this.limit,
+    required this.theme,
+    required this.majorStep,
+    required this.minorStep,
+    this.labelDiv = 1,
+    this.scaleLabel,
+    required this.timePhase,
+    required this.blinkPhase,
   });
 
   double get _pct => ((value - min) / (max - min)).clamp(0.0, 1.0);
@@ -229,13 +263,22 @@ class _TakoGaugePainter extends CustomPainter {
   void _drawBackground(Canvas canvas) {
     final center = const Offset(_cx, _cy);
     final r = _gaugeR + 12;
-    canvas.drawCircle(center, r, Paint()
-      ..shader = RadialGradient(colors: const [Color(0xFF0D1728), Color(0xFF050810)])
-          .createShader(Rect.fromCircle(center: center, radius: r)));
-    canvas.drawCircle(center, r, Paint()
-      ..color = const Color(0xFF0F1E30)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.5);
+    canvas.drawCircle(
+      center,
+      r,
+      Paint()
+        ..shader = RadialGradient(
+          colors: const [Color(0xFF0D1728), Color(0xFF050810)],
+        ).createShader(Rect.fromCircle(center: center, radius: r)),
+    );
+    canvas.drawCircle(
+      center,
+      r,
+      Paint()
+        ..color = const Color(0xFF0F1E30)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.5,
+    );
   }
 
   // ── Arc track ───────────────────────────────────────────────────────────
@@ -243,7 +286,10 @@ class _TakoGaugePainter extends CustomPainter {
     final curA = _pctToAngle(_pct);
     final redA = _pctToAngle(_pctRed);
     final limA = _pctToAngle(((limit - min) / (max - min)).clamp(0.0, 1.0));
-    final tRect = Rect.fromCircle(center: const Offset(_cx, _cy), radius: _trackR);
+    final tRect = Rect.fromCircle(
+      center: const Offset(_cx, _cy),
+      radius: _trackR,
+    );
 
     // Redline zone bg
     _arc(canvas, tRect, redA, _sweep(redA, 45), 16, const Color(0xFF4A0808));
@@ -252,27 +298,67 @@ class _TakoGaugePainter extends CustomPainter {
 
     // Active fill (normal zone)
     if (_pct > 0.005) {
-      _arc(canvas, tRect, 135, (curA < redA ? curA : redA) - 135, 13, theme.track,
-          cap: StrokeCap.round, blur: 4);
+      _arc(
+        canvas,
+        tRect,
+        135,
+        (curA < redA ? curA : redA) - 135,
+        13,
+        theme.track,
+        cap: StrokeCap.round,
+        blur: 4,
+      );
     }
 
     // Active fill (redline zone)
     if (_isRed) {
       final pulse = (sin(timePhase * pi * 10) + 1) / 2;
-      final rc = Color.lerp(const Color(0xFFEF4444), const Color(0x88EF4444), pulse * 0.45)!;
-      _arc(canvas, tRect, redA, (curA < limA ? curA : limA) - redA, 15, rc,
-          cap: StrokeCap.round, blur: 6);
+      final rc = Color.lerp(
+        const Color(0xFFEF4444),
+        const Color(0x88EF4444),
+        pulse * 0.45,
+      )!;
+      _arc(
+        canvas,
+        tRect,
+        redA,
+        (curA < limA ? curA : limA) - redA,
+        15,
+        rc,
+        cap: StrokeCap.round,
+        blur: 6,
+      );
     }
 
     // Outer / inner rings
-    _arc(canvas, Rect.fromCircle(center: const Offset(_cx, _cy), radius: _gaugeR),
-        135, 270, 2, const Color(0xFF162540));
-    _arc(canvas, Rect.fromCircle(center: const Offset(_cx, _cy), radius: _trackR - 10),
-        135, 270, 1.5, const Color(0xFF0A1525));
+    _arc(
+      canvas,
+      Rect.fromCircle(center: const Offset(_cx, _cy), radius: _gaugeR),
+      135,
+      270,
+      2,
+      const Color(0xFF162540),
+    );
+    _arc(
+      canvas,
+      Rect.fromCircle(center: const Offset(_cx, _cy), radius: _trackR - 10),
+      135,
+      270,
+      1.5,
+      const Color(0xFF0A1525),
+    );
   }
 
-  void _arc(Canvas canvas, Rect rect, double startDeg, double sweepDeg,
-      double sw, Color color, {StrokeCap? cap, double blur = 0}) {
+  void _arc(
+    Canvas canvas,
+    Rect rect,
+    double startDeg,
+    double sweepDeg,
+    double sw,
+    Color color, {
+    StrokeCap? cap,
+    double blur = 0,
+  }) {
     if (sweepDeg <= 0) return;
     final p = Paint()
       ..color = color
@@ -293,12 +379,16 @@ class _TakoGaugePainter extends CustomPainter {
       final a = _pctToAngle(pct);
       final major = (i * minorStep) % majorStep == 0;
       final tickRed = v >= redline;
-      final tickColor = tickRed ? const Color(0xFFF87171) : const Color(0xFF233550);
+      final tickColor = tickRed
+          ? const Color(0xFFF87171)
+          : const Color(0xFF233550);
 
       canvas.drawLine(
         _polar(a, _gaugeR - (major ? 24 : 12)),
         _polar(a, _gaugeR - 2),
-        Paint()..color = tickColor..strokeWidth = major ? 2.5 : 1.2,
+        Paint()
+          ..color = tickColor
+          ..strokeWidth = major ? 2.5 : 1.2,
       );
 
       if (major) {
@@ -306,10 +396,15 @@ class _TakoGaugePainter extends CustomPainter {
             ? v.round().toString()
             : (v.round() ~/ labelDiv).toString();
         final tp = TextPainter(
-          text: TextSpan(text: label, style: TextStyle(
-            fontSize: 13.5, fontWeight: FontWeight.w700,
-            color: tickColor, fontFamily: 'monospace',
-          )),
+          text: TextSpan(
+            text: label,
+            style: TextStyle(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w700,
+              color: tickColor,
+              fontFamily: 'monospace',
+            ),
+          ),
           textDirection: TextDirection.ltr,
         )..layout();
         final pos = _polar(a, _gaugeR - 40);
@@ -321,10 +416,15 @@ class _TakoGaugePainter extends CustomPainter {
   // ── Scale label ─────────────────────────────────────────────────────────
   void _drawScaleLabel(Canvas canvas) {
     final tp = TextPainter(
-      text: TextSpan(text: scaleLabel, style: const TextStyle(
-        fontSize: 11, color: Color(0xFF1E3450),
-        letterSpacing: 3, fontFamily: 'monospace',
-      )),
+      text: TextSpan(
+        text: scaleLabel,
+        style: const TextStyle(
+          fontSize: 11,
+          color: Color(0xFF1E3450),
+          letterSpacing: 3,
+          fontFamily: 'monospace',
+        ),
+      ),
       textDirection: TextDirection.ltr,
     )..layout();
     tp.paint(canvas, Offset(_cx - tp.width / 2, _cy + 150));
@@ -332,14 +432,14 @@ class _TakoGaugePainter extends CustomPainter {
 
   // ── Tentacles ────────────────────────────────────────────────────────────
   static const _tentacleCfg = [
-    (32.0,  86.0, -1.0, 0.00),
-    (48.0,  94.0,  1.0, 0.15),
+    (32.0, 86.0, -1.0, 0.00),
+    (48.0, 94.0, 1.0, 0.15),
     (65.0, 100.0, -1.0, 0.28),
-    (82.0, 104.0,  1.0, 0.40),
+    (82.0, 104.0, 1.0, 0.40),
     (99.0, 104.0, -1.0, 0.50),
     (116.0, 100.0, 1.0, 0.58),
     (133.0, 94.0, -1.0, 0.65),
-    (149.0, 86.0,  1.0, 0.70),
+    (149.0, 86.0, 1.0, 0.70),
   ];
 
   void _drawTentacles(Canvas canvas) {
@@ -371,27 +471,50 @@ class _TakoGaugePainter extends CustomPainter {
 
       // Body
       canvas.drawPath(
-        Path()..moveTo(s.dx, s.dy)..cubicTo(p1.dx, p1.dy, p2.dx, p2.dy, e.dx, e.dy),
-        Paint()..color = theme.body..style = PaintingStyle.stroke
-            ..strokeWidth = 22..strokeCap = StrokeCap.round,
+        Path()
+          ..moveTo(s.dx, s.dy)
+          ..cubicTo(p1.dx, p1.dy, p2.dx, p2.dy, e.dx, e.dy),
+        Paint()
+          ..color = theme.body
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 22
+          ..strokeCap = StrokeCap.round,
       );
 
       // Tip curl
       final curlAng = a + curl * 70;
-      final tip2 = Offset(e.dx + 22 * cos(_deg(curlAng)), e.dy + 22 * sin(_deg(curlAng)));
+      final tip2 = Offset(
+        e.dx + 22 * cos(_deg(curlAng)),
+        e.dy + 22 * sin(_deg(curlAng)),
+      );
       canvas.drawPath(
-        Path()..moveTo(e.dx, e.dy)
-            ..quadraticBezierTo(tip2.dx, tip2.dy, (e.dx + tip2.dx) / 2, (e.dy + tip2.dy) / 2),
-        Paint()..color = theme.body..style = PaintingStyle.stroke
-            ..strokeWidth = 14..strokeCap = StrokeCap.round,
+        Path()
+          ..moveTo(e.dx, e.dy)
+          ..quadraticBezierTo(
+            tip2.dx,
+            tip2.dy,
+            (e.dx + tip2.dx) / 2,
+            (e.dy + tip2.dy) / 2,
+          ),
+        Paint()
+          ..color = theme.body
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 14
+          ..strokeCap = StrokeCap.round,
       );
 
       // Suction spots
       for (final t in [0.28, 0.54, 0.78]) {
         final mt = 1 - t;
         final spot = Offset(
-          mt*mt*mt*s.dx + 3*mt*mt*t*p1.dx + 3*mt*t*t*p2.dx + t*t*t*e.dx,
-          mt*mt*mt*s.dy + 3*mt*mt*t*p1.dy + 3*mt*t*t*p2.dy + t*t*t*e.dy,
+          mt * mt * mt * s.dx +
+              3 * mt * mt * t * p1.dx +
+              3 * mt * t * t * p2.dx +
+              t * t * t * e.dx,
+          mt * mt * mt * s.dy +
+              3 * mt * mt * t * p1.dy +
+              3 * mt * t * t * p2.dy +
+              t * t * t * e.dy,
         );
         canvas.drawCircle(spot, 9, Paint()..color = theme.spot);
       }
@@ -409,32 +532,49 @@ class _TakoGaugePainter extends CustomPainter {
     final auraColor = _isRed
         ? Color.lerp(const Color(0x59DC1E1E), const Color(0x20DC1E1E), pulse)!
         : theme.aura;
-    canvas.drawCircle(center, _headR + 20, Paint()
-      ..color = auraColor
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6));
+    canvas.drawCircle(
+      center,
+      _headR + 20,
+      Paint()
+        ..color = auraColor
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
+    );
 
     // Drop shadow
-    canvas.drawCircle(const Offset(_cx, _cy + 4), _headR, Paint()
-      ..color = Colors.black.withValues(alpha:0.35)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6));
+    canvas.drawCircle(
+      const Offset(_cx, _cy + 4),
+      _headR,
+      Paint()
+        ..color = Colors.black.withValues(alpha: 0.35)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
+    );
 
     // Head gradient
     final hL = _isRed ? theme.headHotLight : theme.headLight;
-    final hM = _isRed ? theme.headHotMid  : theme.headMid;
+    final hM = _isRed ? theme.headHotMid : theme.headMid;
     final hD = _isRed ? theme.headHotDark : theme.headDark;
-    canvas.drawCircle(center, _headR, Paint()
-      ..shader = RadialGradient(
-        center: const Alignment(-0.16, -0.3),
-        radius: 0.7,
-        colors: [hL, hM, hD],
-        stops: const [0.0, 0.6, 1.0],
-      ).createShader(Rect.fromCircle(center: center, radius: _headR)));
+    canvas.drawCircle(
+      center,
+      _headR,
+      Paint()
+        ..shader = RadialGradient(
+          center: const Alignment(-0.16, -0.3),
+          radius: 0.7,
+          colors: [hL, hM, hD],
+          stops: const [0.0, 0.6, 1.0],
+        ).createShader(Rect.fromCircle(center: center, radius: _headR)),
+    );
 
     // Highlight streak
     canvas.drawPath(
-      Path()..moveTo(_cx - 55, _cy - 28)..quadraticBezierTo(_cx - 42, _cy - 72, _cx + 10, _cy - 68),
-      Paint()..color = Colors.white.withValues(alpha:0.12)..style = PaintingStyle.stroke
-          ..strokeWidth = 10..strokeCap = StrokeCap.round,
+      Path()
+        ..moveTo(_cx - 55, _cy - 28)
+        ..quadraticBezierTo(_cx - 42, _cy - 72, _cx + 10, _cy - 68),
+      Paint()
+        ..color = Colors.white.withValues(alpha: 0.12)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 10
+        ..strokeCap = StrokeCap.round,
     );
   }
 
@@ -449,36 +589,67 @@ class _TakoGaugePainter extends CustomPainter {
     final bR = Offset(_cx - bw * cos(pR), _cy - bw * sin(pR));
     final fwd = _needleR * 0.55;
     const puff = 12.0;
-    final cL = Offset(bL.dx + fwd*cos(aR) + puff*cos(pR), bL.dy + fwd*sin(aR) + puff*sin(pR));
-    final cR = Offset(bR.dx + fwd*cos(aR) - puff*cos(pR), bR.dy + fwd*sin(aR) - puff*sin(pR));
-    final back = Offset(_cx - 30*cos(aR), _cy - 30*sin(aR));
+    final cL = Offset(
+      bL.dx + fwd * cos(aR) + puff * cos(pR),
+      bL.dy + fwd * sin(aR) + puff * sin(pR),
+    );
+    final cR = Offset(
+      bR.dx + fwd * cos(aR) - puff * cos(pR),
+      bR.dy + fwd * sin(aR) - puff * sin(pR),
+    );
+    final back = Offset(_cx - 30 * cos(aR), _cy - 30 * sin(aR));
 
     final beakColor = _isRed ? const Color(0xFFFCA5A5) : theme.beak;
     final beakPath = Path()
-      ..moveTo(bL.dx, bL.dy)..quadraticBezierTo(cL.dx, cL.dy, tip.dx, tip.dy)
-      ..quadraticBezierTo(cR.dx, cR.dy, bR.dx, bR.dy)..close();
+      ..moveTo(bL.dx, bL.dy)
+      ..quadraticBezierTo(cL.dx, cL.dy, tip.dx, tip.dy)
+      ..quadraticBezierTo(cR.dx, cR.dy, bR.dx, bR.dy)
+      ..close();
 
     // Glow
-    canvas.drawPath(beakPath, Paint()..color = beakColor
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, _isRed ? 6 : 5));
+    canvas.drawPath(
+      beakPath,
+      Paint()
+        ..color = beakColor
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, _isRed ? 6 : 5),
+    );
     // Fill
     canvas.drawPath(beakPath, Paint()..color = beakColor);
-    canvas.drawCircle(tip, 6, Paint()..color = beakColor
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, _isRed ? 6 : 5));
+    canvas.drawCircle(
+      tip,
+      6,
+      Paint()
+        ..color = beakColor
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, _isRed ? 6 : 5),
+    );
 
     // Crease
     canvas.drawPath(
-      Path()..moveTo(bL.dx, bL.dy)
-          ..quadraticBezierTo(_cx + _needleR*0.25*cos(aR), _cy + _needleR*0.25*sin(aR), bR.dx, bR.dy),
-      Paint()..color = (_isRed ? const Color(0xFFDC4444) : theme.beakCrease).withValues(alpha:0.5)
-          ..style = PaintingStyle.stroke..strokeWidth = 2,
+      Path()
+        ..moveTo(bL.dx, bL.dy)
+        ..quadraticBezierTo(
+          _cx + _needleR * 0.25 * cos(aR),
+          _cy + _needleR * 0.25 * sin(aR),
+          bR.dx,
+          bR.dy,
+        ),
+      Paint()
+        ..color = (_isRed ? const Color(0xFFDC4444) : theme.beakCrease)
+            .withValues(alpha: 0.5)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2,
     );
 
     // Counter weight
     canvas.drawCircle(back, 13, Paint()..color = const Color(0xFF1A0A30));
-    canvas.drawCircle(back, 13, Paint()
-      ..color = _isRed ? const Color(0xFFCC1A1A) : theme.counterStroke
-      ..style = PaintingStyle.stroke..strokeWidth = 2);
+    canvas.drawCircle(
+      back,
+      13,
+      Paint()
+        ..color = _isRed ? const Color(0xFFCC1A1A) : theme.counterStroke
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2,
+    );
   }
 
   // ── Face ────────────────────────────────────────────────────────────────
@@ -491,16 +662,31 @@ class _TakoGaugePainter extends CustomPainter {
     final blush = ((_pct - 0.4) / 0.55).clamp(0.0, 0.55);
 
     // Eyebrows
-    final browPaint = Paint()..color = theme.brow..style = PaintingStyle.stroke
-        ..strokeWidth = 4..strokeCap = StrokeCap.round;
+    final browPaint = Paint()
+      ..color = theme.brow
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4
+      ..strokeCap = StrokeCap.round;
     canvas.drawPath(
-      Path()..moveTo(_cx-40, _cy-40-browRaise)
-          ..quadraticBezierTo(_cx-26, _cy-50-browRaise, _cx-14, _cy-42-browRaise),
+      Path()
+        ..moveTo(_cx - 40, _cy - 40 - browRaise)
+        ..quadraticBezierTo(
+          _cx - 26,
+          _cy - 50 - browRaise,
+          _cx - 14,
+          _cy - 42 - browRaise,
+        ),
       browPaint,
     );
     canvas.drawPath(
-      Path()..moveTo(_cx+14, _cy-42-browRaise)
-          ..quadraticBezierTo(_cx+26, _cy-50-browRaise, _cx+40, _cy-40-browRaise),
+      Path()
+        ..moveTo(_cx + 14, _cy - 42 - browRaise)
+        ..quadraticBezierTo(
+          _cx + 26,
+          _cy - 50 - browRaise,
+          _cx + 40,
+          _cy - 40 - browRaise,
+        ),
       browPaint,
     );
 
@@ -517,50 +703,96 @@ class _TakoGaugePainter extends CustomPainter {
     _drawEye(canvas, _cx + 24, _cy - 26, 16, eyeScaleY, pdx * 0.5, pdy * 0.5);
 
     // Eye shine
-    canvas.drawCircle(Offset(_cx-30+pdx*0.25, _cy-33+pdy*0.25), 4.5,
-        Paint()..color = Colors.white.withValues(alpha:0.9));
-    canvas.drawCircle(Offset(_cx+18+pdx*0.25, _cy-33+pdy*0.25), 4.5,
-        Paint()..color = Colors.white.withValues(alpha:0.9));
-    canvas.drawCircle(Offset(_cx-20+pdx*0.25, _cy-18+pdy*0.25), 2,
-        Paint()..color = Colors.white.withValues(alpha:0.45));
-    canvas.drawCircle(Offset(_cx+28+pdx*0.25, _cy-18+pdy*0.25), 2,
-        Paint()..color = Colors.white.withValues(alpha:0.45));
+    canvas.drawCircle(
+      Offset(_cx - 30 + pdx * 0.25, _cy - 33 + pdy * 0.25),
+      4.5,
+      Paint()..color = Colors.white.withValues(alpha: 0.9),
+    );
+    canvas.drawCircle(
+      Offset(_cx + 18 + pdx * 0.25, _cy - 33 + pdy * 0.25),
+      4.5,
+      Paint()..color = Colors.white.withValues(alpha: 0.9),
+    );
+    canvas.drawCircle(
+      Offset(_cx - 20 + pdx * 0.25, _cy - 18 + pdy * 0.25),
+      2,
+      Paint()..color = Colors.white.withValues(alpha: 0.45),
+    );
+    canvas.drawCircle(
+      Offset(_cx + 28 + pdx * 0.25, _cy - 18 + pdy * 0.25),
+      2,
+      Paint()..color = Colors.white.withValues(alpha: 0.45),
+    );
 
     // Blush
     if (blush > 0) {
-      final bp = Paint()..color = const Color(0xFFF87171).withValues(alpha:blush * 0.5)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+      final bp = Paint()
+        ..color = const Color(0xFFF87171).withValues(alpha: blush * 0.5)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
       canvas.drawCircle(Offset(_cx - 42, _cy - 8), 14, bp);
       canvas.drawCircle(Offset(_cx + 42, _cy - 8), 14, bp);
     }
 
     // Mouth
-    canvas.drawCircle(const Offset(_cx, _cy), 20,
-        Paint()..color = theme.mouthOuter);
-    canvas.drawCircle(const Offset(_cx, _cy), 20,
-        Paint()..color = theme.mouthOuterStroke..style = PaintingStyle.stroke..strokeWidth = 2);
-    canvas.drawCircle(const Offset(_cx, _cy), 12,
-        Paint()..color = const Color(0xFF3A0804));
+    canvas.drawCircle(
+      const Offset(_cx, _cy),
+      20,
+      Paint()..color = theme.mouthOuter,
+    );
+    canvas.drawCircle(
+      const Offset(_cx, _cy),
+      20,
+      Paint()
+        ..color = theme.mouthOuterStroke
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2,
+    );
+    canvas.drawCircle(
+      const Offset(_cx, _cy),
+      12,
+      Paint()..color = const Color(0xFF3A0804),
+    );
     canvas.drawPath(
-      Path()..moveTo(_cx-11, _cy-10)..quadraticBezierTo(_cx, _cy-13, _cx+11, _cy-10),
-      Paint()..color = const Color(0xFF7F4A3A).withValues(alpha:0.45)
-          ..style = PaintingStyle.stroke..strokeWidth = 3..strokeCap = StrokeCap.round,
+      Path()
+        ..moveTo(_cx - 11, _cy - 10)
+        ..quadraticBezierTo(_cx, _cy - 13, _cx + 11, _cy - 10),
+      Paint()
+        ..color = const Color(0xFF7F4A3A).withValues(alpha: 0.45)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3
+        ..strokeCap = StrokeCap.round,
     );
   }
 
-  void _drawEye(Canvas canvas, double ex, double ey, double r,
-      double scaleY, double pdx, double pdy) {
+  void _drawEye(
+    Canvas canvas,
+    double ex,
+    double ey,
+    double r,
+    double scaleY,
+    double pdx,
+    double pdy,
+  ) {
     canvas.save();
     canvas.translate(ex, ey);
     canvas.scale(1.0, scaleY);
     canvas.translate(-ex, -ey);
-    canvas.drawCircle(Offset(ex, ey), r, Paint()..color = const Color(0xFF140404));
-    canvas.drawCircle(Offset(ex + pdx, ey + pdy), 9, Paint()..color = const Color(0xFF0A0202));
+    canvas.drawCircle(
+      Offset(ex, ey),
+      r,
+      Paint()..color = const Color(0xFF140404),
+    );
+    canvas.drawCircle(
+      Offset(ex + pdx, ey + pdy),
+      9,
+      Paint()..color = const Color(0xFF0A0202),
+    );
     canvas.restore();
   }
 
   @override
   bool shouldRepaint(_TakoGaugePainter old) =>
-      old.value != value || old.timePhase != timePhase ||
+      old.value != value ||
+      old.timePhase != timePhase ||
       old.blinkPhase != blinkPhase;
 }

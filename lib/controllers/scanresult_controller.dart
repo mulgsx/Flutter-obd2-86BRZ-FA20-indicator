@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -6,6 +7,7 @@ class ScanResultController extends GetxController {
   var scanResultList = <ScanResult>[].obs;
   var isScanning = false.obs;
   var permissionGranted = false.obs;
+  StreamSubscription? _scanSubscription;
 
   @override
   void onInit() {
@@ -30,8 +32,9 @@ class ScanResultController extends GetxController {
 
   void startScan() {
     scanResultList.clear();
+    _scanSubscription?.cancel();
     FlutterBluePlus.startScan(timeout: const Duration(seconds: 15));
-    FlutterBluePlus.scanResults.listen((results) {
+    _scanSubscription = FlutterBluePlus.scanResults.listen((results) {
       // Sort so devices whose name contains "OBD" appear at the top of the list.
       // "OBD" を含むデバイス名をリストの先頭に並べる。
       final sorted = [...results]..sort((a, b) {
@@ -55,6 +58,7 @@ class ScanResultController extends GetxController {
 
   @override
   void onClose() {
+    _scanSubscription?.cancel();
     stopScan();
     super.onClose();
   }

@@ -49,22 +49,30 @@ class _StatusBar extends StatelessWidget {
           const Icon(Icons.directions_car, color: Color(0xFF58A6FF), size: 18),
           const SizedBox(width: 8),
           Expanded(
-            child: Obx(() => Text(
-                  '${obd.device == null ? 'デモモード' : obd.device!.platformName.isNotEmpty ? obd.device!.platformName : obd.device!.remoteId.str}'
-                  '  |  ${_statusLabel(obd.status.value)}',
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                    letterSpacing: 0.5,
-                  ),
-                )),
+            child: Obx(
+              () => Text(
+                '${obd.device == null
+                    ? 'デモモード'
+                    : obd.device!.platformName.isNotEmpty
+                    ? obd.device!.platformName
+                    : obd.device!.remoteId.str}'
+                '  |  ${_statusLabel(obd.status.value)}',
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
           ),
-          Obx(() => obd.status.value == OBDStatus.error
-              ? Text(
-                  obd.statusMessage.value,
-                  style: TextStyle(color: Colors.red.shade400, fontSize: 11),
-                )
-              : const SizedBox.shrink()),
+          Obx(
+            () => obd.status.value == OBDStatus.error
+                ? Text(
+                    obd.statusMessage.value,
+                    style: TextStyle(color: Colors.red.shade400, fontSize: 11),
+                  )
+                : const SizedBox.shrink(),
+          ),
           const SizedBox(width: 12),
           _LogToggleButton(obd: obd),
           const SizedBox(width: 8),
@@ -86,12 +94,12 @@ class _StatusBar extends StatelessWidget {
   }
 
   String _statusLabel(OBDStatus s) => switch (s) {
-        OBDStatus.disconnected => '切断',
-        OBDStatus.connecting => '接続中...',
-        OBDStatus.initializing => '初期化中...',
-        OBDStatus.polling => 'ポーリング中',
-        OBDStatus.error => 'エラー',
-      };
+    OBDStatus.disconnected => '切断',
+    OBDStatus.connecting => '接続中...',
+    OBDStatus.initializing => '初期化中...',
+    OBDStatus.polling => 'ポーリング中',
+    OBDStatus.error => 'エラー',
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -107,56 +115,73 @@ class _GaugeArea extends StatelessWidget {
     return Obx(() {
       // Obx スコープ内で .obs 値を取り出す（LayoutBuilder の外で読む必要あり）
       final waterVal = obd.waterTemp.value?.toDouble();
-      final rpmVal   = obd.rpm.value?.toDouble();
-      final oilVal   = obd.oilTemp.value?.toDouble();
+      final rpmVal = obd.rpm.value?.toDouble();
+      final oilVal = obd.oilTemp.value?.toDouble();
 
-      return LayoutBuilder(builder: (ctx, constraints) {
-        final baseW = (constraints.maxWidth - 80) / (2 + 1.2);
-        final baseH = constraints.maxHeight;
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: baseW,
-              height: baseH,
-              child: TakoGaugeWidget(
-                value: waterVal,
-                min: 40, max: 130, redline: 105, limit: 120,
-                label: '水温 / COOLANT', unit: '°C',
-                theme: TakoTheme.red,
-                majorStep: 20, minorStep: 10,
-                scaleLabel: '°C  COOLANT',
+      return LayoutBuilder(
+        builder: (ctx, constraints) {
+          final baseW = (constraints.maxWidth - 80) / (2 + 1.2);
+          final baseH = constraints.maxHeight;
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: baseW,
+                height: baseH,
+                child: TakoGaugeWidget(
+                  value: waterVal,
+                  min: 40,
+                  max: 130,
+                  redline: 105,
+                  limit: 120,
+                  label: '水温 / COOLANT',
+                  unit: '°C',
+                  theme: TakoTheme.red,
+                  majorStep: 20,
+                  minorStep: 10,
+                  scaleLabel: '°C  COOLANT',
+                ),
               ),
-            ),
-            SizedBox(
-              width: baseW * 1.2,
-              height: baseH,
-              child: TakoGaugeWidget(
-                value: rpmVal,
-                min: 0, max: 8000, redline: 6500, limit: 7500,
-                label: 'エンジン回転数 / RPM', unit: 'rpm',
-                theme: TakoTheme.red,
-                majorStep: 1000, minorStep: 500,
-                labelDiv: 1000,
-                scaleLabel: '×1000  RPM',
+              SizedBox(
+                width: baseW * 1.2,
+                height: baseH,
+                child: TakoGaugeWidget(
+                  value: rpmVal,
+                  min: 0,
+                  max: 8000,
+                  redline: 6500,
+                  limit: 7500,
+                  label: 'エンジン回転数 / RPM',
+                  unit: 'rpm',
+                  theme: TakoTheme.red,
+                  majorStep: 1000,
+                  minorStep: 500,
+                  labelDiv: 1000,
+                  scaleLabel: '×1000  RPM',
+                ),
               ),
-            ),
-            SizedBox(
-              width: baseW,
-              height: baseH,
-              child: TakoGaugeWidget(
-                value: oilVal,
-                min: 40, max: 150, redline: 125, limit: 140,
-                label: '油温 / OIL TEMP', unit: '°C',
-                theme: TakoTheme.amber,
-                majorStep: 20, minorStep: 10,
-                scaleLabel: '°C  OIL TEMP',
+              SizedBox(
+                width: baseW,
+                height: baseH,
+                child: TakoGaugeWidget(
+                  value: oilVal,
+                  min: 40,
+                  max: 150,
+                  redline: 125,
+                  limit: 140,
+                  label: '油温 / OIL TEMP',
+                  unit: '°C',
+                  theme: TakoTheme.red,
+                  majorStep: 20,
+                  minorStep: 10,
+                  scaleLabel: '°C  OIL TEMP',
+                ),
               ),
-            ),
-          ],
-        );
-      });
+            ],
+          );
+        },
+      );
     });
   }
 }
@@ -259,8 +284,11 @@ class _LogSheetState extends State<_LogSheet> {
                 const SizedBox(width: 4),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
-                  icon:
-                      const Icon(Icons.close, color: Colors.white38, size: 18),
+                  icon: const Icon(
+                    Icons.close,
+                    color: Colors.white38,
+                    size: 18,
+                  ),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),
@@ -377,14 +405,15 @@ class _ClearButton extends StatelessWidget {
                 mgr.clearLogs();
                 Navigator.pop(context);
               },
-              child:
-                  const Text('クリア', style: TextStyle(color: Colors.redAccent)),
+              child: const Text(
+                'クリア',
+                style: TextStyle(color: Colors.redAccent),
+              ),
             ),
           ],
         ),
       ),
-      icon:
-          const Icon(Icons.delete_outline, color: Colors.white38, size: 18),
+      icon: const Icon(Icons.delete_outline, color: Colors.white38, size: 18),
       padding: EdgeInsets.zero,
       constraints: const BoxConstraints(),
     );
@@ -395,8 +424,11 @@ class _FmtBtn extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
-  const _FmtBtn(
-      {required this.label, required this.selected, required this.onTap});
+  const _FmtBtn({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
