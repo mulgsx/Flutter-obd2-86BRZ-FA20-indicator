@@ -44,11 +44,22 @@ class _StatusBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Outer Container fills edge-to-edge with surface color (covers notch areas).
+    // Inner SafeArea shifts content away from cutouts; top/bottom are excluded
+    // because the status bar is hidden (immersiveSticky) and this is not the bottom.
+    // 外側の Container で背景色を端まで塗る（切り欠き部分も塗りつぶす）。
+    // 内側の SafeArea でコンテンツだけを切り欠きの内側にずらす。
+    // top/bottom は immersiveSticky でステータスバー非表示のため除外。
     return Container(
-      height: 44,
       color: AppColors.surface,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
+      child: SafeArea(
+        top: false,
+        bottom: false,
+        child: SizedBox(
+          height: 44,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
         children: [
           const Icon(Icons.directions_car, color: AppColors.primary, size: 18),
           const SizedBox(width: 8),
@@ -93,8 +104,11 @@ class _StatusBar extends StatelessWidget {
             child: const Text('Disconnect', style: TextStyle(fontSize: 12)),
           ),
         ],
-      ),
-    );
+            ),   // Row
+          ),     // Padding
+        ),       // SizedBox
+      ),         // SafeArea
+    );           // Container
   }
 
   String _statusLabel(OBDStatus s) => switch (s) {

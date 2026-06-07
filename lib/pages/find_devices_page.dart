@@ -74,7 +74,10 @@ class FindDevicesPage extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.symmetric(vertical: 8),
             children: [
-              _sectionHeader('Scan Results'),
+              SafeArea(
+                bottom: false,
+                child: _sectionHeader('Scan Results'),
+              ),
               if (ctrl.scanResultList.isEmpty)
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
