@@ -115,9 +115,25 @@ class _GaugeArea extends StatelessWidget {
   const _GaugeArea({required this.obd});
 
   // ----------------------------------------------------------------
-  // Gauge config. Edit here to add a new gauge.
-  // ゲージ設定。新しいゲージを追加する場合はここを編集する。
+  // Gauge spec sheets — each GaugeConfig is the single source of truth
+  // for one gauge (label, unit, value range, display settings).
+  //
+  // ゲージの仕様書 — GaugeConfig 1つがゲージ1つの唯一の設定源
+  // （ラベル・単位・値範囲・表示設定をまとめて管理）。
+  //
+  // NOTE: GaugeConfig manages display only. The PID is shown as a comment
+  // on each config; the actual polling and parsing live in OBDController.
+  // To add a gauge, edit all 3 locations:
+  //   (1) Add a GaugeConfig here            ← 表示設定
+  //   (2) Add the PID to _pidQueue()         ← ポーリング対象
+  //   (3) Add a parser to _parseResponse()   ← 値の計算式
+  //   (4) Add a GaugeWidget in _buildGauges() below ← UI配置
+  //
+  // 注意: GaugeConfig は表示のみ管理。PIDは各コメントに記載。
+  // 実際のポーリングと解析は OBDController 側にある。
   // ----------------------------------------------------------------
+
+  // PID: 010C — RPM = (A * 256 + B) / 4
   static const _rpmConfig = GaugeConfig(
     label: 'ENGINE RPM',
     unit: 'rpm',
@@ -125,6 +141,7 @@ class _GaugeArea extends StatelessWidget {
     maxValue: 8000,
   );
 
+  // PID: 0105 — Water temp = A - 40 [°C] / 冷却水温 = A - 40 [℃]
   static const _waterConfig = GaugeConfig(
     label: 'WATER TEMP',
     unit: '°C',
@@ -132,6 +149,8 @@ class _GaugeArea extends StatelessWidget {
     maxValue: 130,
   );
 
+  // PID: 2101 — Oil temp = parts[2+28] - 40 [°C]  (FA20 Mode 21, requires ATSH 7E0)
+  // 油温 = データバイトオフセット28番目 - 40 [℃]（FA20 Mode 21、ATSH 7E0 が必要）
   static const _oilConfig = GaugeConfig(
     label: 'OIL TEMP',
     unit: '°C',

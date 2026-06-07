@@ -32,15 +32,22 @@ class OBDController extends GetxController {
   bool _polling = false;
 
   /// PID list to poll cyclically (86BRZ FA20 specific).
-  /// Edit this list to add or change PIDs.
+  /// To add a PID: (1) add the command string here,
+  /// (2) add a parser in _parseResponse(), (3) expose an .obs field above.
+  ///
   /// ポーリング対象のPIDリスト（86BRZ FA20 対応）。
-  /// 追加・変更するにはこのリストを編集する。
+  /// PIDを追加する手順: (1) ここにコマンド文字列を追加、
+  /// (2) _parseResponse() に分岐を追加、(3) 上部に .obs フィールドを追加。
   final List<String> _pidQueue = [
     '010C\r', // RPM
     '0105\r', // Water temp / 冷却水温
     '2101\r', // Oil temp — Mode 21 Subaru-specific + ATSH 7E0 / 油温（Mode 21 Subaru固有 + ATSH 7E0）
   ];
   int _pidIndex = 0;
+
+  // ---------------------------------------------------------------------------
+  // Lifecycle / ライフサイクル
+  // ---------------------------------------------------------------------------
 
   @override
   void onInit() {
@@ -226,6 +233,10 @@ class OBDController extends GetxController {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Response Parsing Pipeline / レスポンス解析パイプライン
+  // ---------------------------------------------------------------------------
+
   void _parseResponse(String command, String response) {
     try {
       final trimmed = response.trim().toUpperCase();
@@ -400,6 +411,10 @@ class OBDController extends GetxController {
       return 0;
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Response Parsing Helpers / レスポンス解析ヘルパー
+  // ---------------------------------------------------------------------------
 
   List<String> _cleanMultiFrame(List<String> parts) {
     return OBDResponseCleaner.clean(parts);

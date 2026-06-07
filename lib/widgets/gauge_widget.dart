@@ -2,24 +2,34 @@ import 'package:flutter/material.dart';
 import '../models/gauge_config.dart';
 import '../theme/app_colors.dart';
 
-/// Simple OBD2 digital readout card — wide horizontal card with label and value.
-/// シンプルなOBD2デジタル表示カード。横長カードにラベルと値を並べる。
+/// The visual layer for a single OBD gauge — this file is responsible for
+/// ALL rendering. Layout, colors, font sizes, and null handling live here.
+///
+/// Receives a [GaugeConfig] (what to show) and a [value] (the OBD reading).
+/// It does not know about BLE, PIDs, or parsing — those are in OBDController.
+///
+/// 1ゲージの描画レイヤー — レイアウト・色・フォントサイズ・null処理はすべてここ。
+/// [GaugeConfig]（表示設定）と [value]（OBD計測値）を受け取って描画する。
+/// BLE・PID・解析の知識は持たない。
 class GaugeWidget extends StatelessWidget {
   final GaugeConfig config;
 
-  /// Value to display. Shows "--" when null.
-  /// 表示する値。null の場合は "--" を表示。
+  /// Live OBD reading to display.
+  /// 表示するOBD計測値。
   final double? value;
 
   const GaugeWidget({super.key, required this.config, this.value});
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = _statusColor(value, config);
+    // Shows "--" when null (not yet received).
+    // null のとき（未受信）は "--" を表示する。
     final valueText = value != null
         ? value!.toStringAsFixed(config.decimals)
         : '--';
 
+    // Simple card layout: label on top, value + unit on the bottom row.
+    // シンプルなカード表示: 上にラベル、下の行に値と単位を並べる。
     return Card(
       margin: EdgeInsets.zero,
       child: Padding(
@@ -67,10 +77,5 @@ class GaugeWidget extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  Color _statusColor(double? value, GaugeConfig config) {
-    if (value == null) return AppColors.gaugeNull;
-    return config.normalColor;
   }
 }

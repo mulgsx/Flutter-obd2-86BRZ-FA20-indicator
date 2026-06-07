@@ -5,6 +5,10 @@ import '../controllers/scanresult_controller.dart';
 import '../theme/app_colors.dart';
 import 'dashboard_page.dart';
 
+// ---------------------------------------------------------------------------
+// FindDevicesPage / BLEデバイス選択画面
+// ---------------------------------------------------------------------------
+
 /// BLE device selection screen shown after Bluetooth adapter is confirmed on.
 /// Scans for nearby ELM327 adapters; tap a result to connect and open the dashboard.
 /// BLE デバイス選択画面（Bluetooth ON 確認後に表示）。
@@ -14,8 +18,12 @@ class FindDevicesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Registers ScanResultController to manage BLE scan lifecycle.
+    // ScanResultController を登録し、BLEスキャンのライフサイクルを管理する。
     final ctrl = Get.put(ScanResultController());
 
+    // Deferred to post-frame so the widget tree is ready before requesting permissions.
+    // ウィジェットツリーの構築完了後に権限確認とスキャンを開始する。
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ctrl.requestPermissionsAndScan();
     });
@@ -34,6 +42,8 @@ class FindDevicesPage extends StatelessWidget {
         ),
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
         actions: [
+          // Navigates to the dashboard without a real device (device: null = demo mode).
+          // 実機なしでダッシュボードへ遷移する（device: null = デモモード）
           TextButton(
             onPressed: () => Get.to(() => const DashboardPage()),
             child: const Text(
@@ -44,6 +54,8 @@ class FindDevicesPage extends StatelessWidget {
         ],
       ),
       body: Obx(() {
+        // Permissions not yet granted and no cached results → show guidance.
+        // 権限未取得かつスキャン結果なし → 権限案内を表示
         if (!ctrl.permissionGranted.value && ctrl.scanResultList.isEmpty) {
           return const Center(
             child: Padding(
@@ -83,6 +95,9 @@ class FindDevicesPage extends StatelessWidget {
           ),
         );
       }),
+
+      // Scan toggle button: red "Stop" while scanning, blue "Start" when idle.
+      // スキャン切り替えボタン: スキャン中は赤の「停止」、待機中は青の「開始」
       floatingActionButton: Obx(
         () => FloatingActionButton.extended(
           backgroundColor: ctrl.isScanning.value
@@ -104,6 +119,8 @@ class FindDevicesPage extends StatelessWidget {
     );
   }
 
+  // Small section title above the device list (blue, wide letter-spacing).
+  // デバイスリスト上部に表示するセクション見出し（青・字間広め）
   Widget _sectionHeader(String title) => Padding(
     padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
     child: Text(
@@ -118,6 +135,15 @@ class FindDevicesPage extends StatelessWidget {
   );
 }
 
+// ---------------------------------------------------------------------------
+// _DeviceTile / スキャン結果の1行ウィジェット
+// ---------------------------------------------------------------------------
+
+/// A single row in the scan result list showing device name, RSSI, and MAC address.
+/// Tap to connect; tap again while connecting to cancel.
+///
+/// スキャン結果リストの1行。デバイス名・RSSI・MACアドレスを表示する。
+/// タップで接続開始、接続中に再タップでキャンセル。
 class _DeviceTile extends StatefulWidget {
   final ScanResult result;
   const _DeviceTile({required this.result});
@@ -129,6 +155,12 @@ class _DeviceTile extends StatefulWidget {
 class _DeviceTileState extends State<_DeviceTile> {
   bool _connecting = false;
 
+  // ---------------------------------------------------------------------------
+  // Device Name / デバイス名の解決
+  // ---------------------------------------------------------------------------
+
+  // Resolves the display name: platformName → advName → MAC address (fallback).
+  // 表示名の優先順位: platformName → advName → MACアドレス（フォールバック）
   String get _deviceName {
     final name = widget.result.device.platformName;
     if (name.isNotEmpty) return name;
@@ -137,15 +169,25 @@ class _DeviceTileState extends State<_DeviceTile> {
     return widget.result.device.remoteId.str;
   }
 
+  // ---------------------------------------------------------------------------
+  // Connection / 接続・キャンセル
+  // ---------------------------------------------------------------------------
+
   Future<void> _connect() async {
     setState(() => _connecting = true);
     try {
+      // try: BLE connect → navigate to dashboard on success.
+      // try: BLE接続 → 成功したらダッシュボードへ遷移
       await widget.result.device.connect(timeout: const Duration(seconds: 15));
       if (!mounted) return;
       await Get.to(() => DashboardPage(device: widget.result.device));
     } catch (e) {
+      // catch: connection error → show snackbar (except user-initiated cancel).
+      // catch: 接続エラー → スナックバーで通知（ユーザーによるキャンセルは除外）
       if (!mounted) return;
       final msg = e.toString();
+      // 'disconnected' and 'cancel' are expected when the user taps to abort — suppress those errors.
+      // ユーザーがタップでキャンセルした場合は 'disconnected'/'cancel' が来るため、エラー表示しない。
       if (!msg.contains('disconnected') && !msg.contains('cancel')) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -155,16 +197,28 @@ class _DeviceTileState extends State<_DeviceTile> {
         );
       }
     } finally {
+      // finally: always reset spinner regardless of success or failure.
+      // finally: 成功・失敗どちらでも必ずスピナーをリセットする
       if (mounted) setState(() => _connecting = false);
     }
   }
 
+  // Called when the user taps the tile while connecting to abort the attempt.
+  // 接続中にタイルをタップしたときに呼ばれ、接続試行を中断する。
   Future<void> _cancelConnect() async {
+    // Reset spinner first so the UI responds immediately.
+    // 先にスピナーをリセットしてUIをすぐに反応させる。
     if (mounted) setState(() => _connecting = false);
     try {
       await widget.result.device.disconnect();
     } catch (_) {}
+    // Errors on disconnect during cancel are irrelevant — always suppress.
+    // キャンセル中の切断エラーは無関係なため常に無視する。
   }
+
+  // ---------------------------------------------------------------------------
+  // Build / ウィジェット構築
+  // ---------------------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
@@ -184,7 +238,8 @@ class _DeviceTileState extends State<_DeviceTile> {
         style: const TextStyle(color: AppColors.textDisabled, fontSize: 11),
       ),
       trailing: _connecting
-          // Loading Icon
+          // Connecting in progress → replace chevron with spinner.
+          // 接続中 → 矢印アイコンをスピナーに切り替え
           ? const SizedBox(
               width: 24,
               height: 24,
