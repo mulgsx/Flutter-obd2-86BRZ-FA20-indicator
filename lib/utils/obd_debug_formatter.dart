@@ -147,6 +147,194 @@ class OBDDebugFormatter {
     );
   }
 
+  static DebugLogEntry formatIntakeAirTempParse({
+    required DateTime timestamp,
+    required String rawResponse,
+    required List<String> parts,
+    required int dataIndex,
+    required int byteValue,
+    required int result,
+    required bool success,
+    String? errorMessage,
+  }) {
+    final frameType = _frameType(parts);
+    final byteHex = '0x${byteValue.toRadixString(16).padLeft(2, '0').toUpperCase()}';
+    final details = {
+      'frameType': frameType,
+      'partsLength': parts.length,
+      'dataIndex': dataIndex,
+      'byteValue': '$byteHex ($byteValue)',
+      'formula': 'A-40',
+      'calculation': '$byteValue - 40 = $result',
+    };
+    final status = success ? 'OK' : 'ERROR${errorMessage != null ? ' [$errorMessage]' : ''}';
+    final text = [
+      '[${_ts(timestamp)}] [IAT] [Mode01:010F]',
+      '  Raw: $rawResponse',
+      '  Parts(${parts.length}): ${parts.join(' ')}',
+      '  Frame: $frameType',
+      '  DataIdx: $dataIndex  Byte: $byteHex ($byteValue)',
+      '  Formula: A-40  →  $byteValue - 40 = $result℃',
+      '  Status: $status',
+    ].join('\n');
+    return DebugLogEntry(
+      timestamp: timestamp,
+      category: 'IAT',
+      pidHex: '0x010F',
+      pidMode: 'Mode 01',
+      rawResponse: rawResponse,
+      parts: parts,
+      parseDetails: details,
+      result: result.toDouble(),
+      resultUnit: '℃',
+      success: success,
+      errorMessage: errorMessage,
+      formattedText: text,
+    );
+  }
+
+  static DebugLogEntry formatVoltageParse({
+    required DateTime timestamp,
+    required String rawResponse,
+    required List<String> parts,
+    required int dataIndex,
+    required int byteA,
+    required int byteB,
+    required double result,
+    required bool success,
+    String? errorMessage,
+  }) {
+    final frameType = _frameType(parts);
+    final hexA = '0x${byteA.toRadixString(16).padLeft(2, '0').toUpperCase()}';
+    final hexB = '0x${byteB.toRadixString(16).padLeft(2, '0').toUpperCase()}';
+    final details = {
+      'frameType': frameType,
+      'partsLength': parts.length,
+      'dataIndex': dataIndex,
+      'byteValue': '$hexA ($byteA)',
+      'formula': '(A*256+B)/1000',
+      'calculation': '($byteA*256+$byteB)/1000 = ${result.toStringAsFixed(3)}',
+    };
+    final status = success ? 'OK' : 'ERROR${errorMessage != null ? ' [$errorMessage]' : ''}';
+    final text = [
+      '[${_ts(timestamp)}] [VOLTAGE] [Mode01:0142]',
+      '  Raw: $rawResponse',
+      '  Parts(${parts.length}): ${parts.join(' ')}',
+      '  Frame: $frameType',
+      '  DataIdx: $dataIndex  A: $hexA ($byteA)  B: $hexB ($byteB)',
+      '  Formula: (A*256+B)/1000  →  ($byteA*256+$byteB)/1000 = ${result.toStringAsFixed(3)}V',
+      '  Status: $status',
+    ].join('\n');
+    return DebugLogEntry(
+      timestamp: timestamp,
+      category: 'VOLTAGE',
+      pidHex: '0x0142',
+      pidMode: 'Mode 01',
+      rawResponse: rawResponse,
+      parts: parts,
+      parseDetails: details,
+      result: result,
+      resultUnit: 'V',
+      success: success,
+      errorMessage: errorMessage,
+      formattedText: text,
+    );
+  }
+
+  static DebugLogEntry formatAfrParse({
+    required DateTime timestamp,
+    required String rawResponse,
+    required List<String> parts,
+    required int dataIndex,
+    required int byteA,
+    required int byteB,
+    required double result,
+    required bool success,
+    String? errorMessage,
+  }) {
+    final frameType = _frameType(parts);
+    final hexA = '0x${byteA.toRadixString(16).padLeft(2, '0').toUpperCase()}';
+    final hexB = '0x${byteB.toRadixString(16).padLeft(2, '0').toUpperCase()}';
+    final details = {
+      'frameType': frameType,
+      'partsLength': parts.length,
+      'dataIndex': dataIndex,
+      'byteValue': '$hexA ($byteA)',
+      'formula': '(A*256+B)/32768*14.7',
+      'calculation': '($byteA*256+$byteB)/32768*14.7 = ${result.toStringAsFixed(2)}',
+    };
+    final status = success ? 'OK' : 'ERROR${errorMessage != null ? ' [$errorMessage]' : ''}';
+    final text = [
+      '[${_ts(timestamp)}] [AFR] [Mode01:0134]',
+      '  Raw: $rawResponse',
+      '  Parts(${parts.length}): ${parts.join(' ')}',
+      '  Frame: $frameType',
+      '  DataIdx: $dataIndex  A: $hexA ($byteA)  B: $hexB ($byteB)',
+      '  Formula: (A*256+B)/32768*14.7  →  ${result.toStringAsFixed(2)} A/F',
+      '  Status: $status',
+    ].join('\n');
+    return DebugLogEntry(
+      timestamp: timestamp,
+      category: 'AFR',
+      pidHex: '0x0134',
+      pidMode: 'Mode 01',
+      rawResponse: rawResponse,
+      parts: parts,
+      parseDetails: details,
+      result: result,
+      resultUnit: 'A/F',
+      success: success,
+      errorMessage: errorMessage,
+      formattedText: text,
+    );
+  }
+
+  static DebugLogEntry formatThrottleParse({
+    required DateTime timestamp,
+    required String rawResponse,
+    required List<String> parts,
+    required int dataIndex,
+    required int byteValue,
+    required double result,
+    required bool success,
+    String? errorMessage,
+  }) {
+    final frameType = _frameType(parts);
+    final byteHex = '0x${byteValue.toRadixString(16).padLeft(2, '0').toUpperCase()}';
+    final details = {
+      'frameType': frameType,
+      'partsLength': parts.length,
+      'dataIndex': dataIndex,
+      'byteValue': '$byteHex ($byteValue)',
+      'formula': 'A/2.55',
+      'calculation': '$byteValue / 2.55 = ${result.toStringAsFixed(1)}',
+    };
+    final status = success ? 'OK' : 'ERROR${errorMessage != null ? ' [$errorMessage]' : ''}';
+    final text = [
+      '[${_ts(timestamp)}] [THROTTLE] [Mode01:0111]',
+      '  Raw: $rawResponse',
+      '  Parts(${parts.length}): ${parts.join(' ')}',
+      '  Frame: $frameType',
+      '  DataIdx: $dataIndex  Byte: $byteHex ($byteValue)',
+      '  Formula: A/2.55  →  $byteValue / 2.55 = ${result.toStringAsFixed(1)}%',
+      '  Status: $status',
+    ].join('\n');
+    return DebugLogEntry(
+      timestamp: timestamp,
+      category: 'THROTTLE',
+      pidHex: '0x0111',
+      pidMode: 'Mode 01',
+      rawResponse: rawResponse,
+      parts: parts,
+      parseDetails: details,
+      result: result,
+      resultUnit: '%',
+      success: success,
+      errorMessage: errorMessage,
+      formattedText: text,
+    );
+  }
+
   static String _frameType(List<String> parts) {
     if (parts.isEmpty) return 'Unknown';
     if (parts.length > 1 && parts[1].endsWith(':')) {
