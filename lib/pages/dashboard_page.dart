@@ -172,6 +172,41 @@ class _GaugeArea extends StatelessWidget {
     maxValue: 150,
   );
 
+  // PID: 010F — Intake air temp = A - 40 [°C] / インマニ温度
+  static const _iatConfig = GaugeConfig(
+    label: 'INTAKE TEMP',
+    unit: '°C',
+    minValue: -40,
+    maxValue: 100,
+  );
+
+  // PID: 0142 — Voltage = (A*256+B)/1000 [V] / 電圧
+  static const _voltageConfig = GaugeConfig(
+    label: 'VOLTAGE',
+    unit: 'V',
+    minValue: 11.0,
+    maxValue: 15.5,
+    decimals: 1,
+  );
+
+  // PID: 0134 — AFR = (A*256+B)/32768*14.7 / 空燃比
+  static const _afrConfig = GaugeConfig(
+    label: 'AIR FUEL RATIO',
+    unit: 'A/F',
+    minValue: 10.0,
+    maxValue: 18.0,
+    decimals: 1,
+  );
+
+  // PID: 0111 — Throttle = A/2.55 [%] / スロットル開度
+  static const _throttleConfig = GaugeConfig(
+    label: 'THROTTLE',
+    unit: '%',
+    minValue: 0,
+    maxValue: 100,
+    decimals: 1,
+  );
+
   @override
   Widget build(BuildContext context) {
     return Obx(() => _buildGauges(obd));
@@ -188,22 +223,42 @@ class _GaugeArea extends StatelessWidget {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              GaugeWidget(
-                config: _waterConfig,
-                value: obd.waterTemp.value?.toDouble(),
+              Row(
+                children: [
+                  Expanded(child: GaugeWidget(config: _waterConfig, value: obd.waterTemp.value?.toDouble())),
+                  const SizedBox(width: 12),
+                  Expanded(child: GaugeWidget(config: _rpmConfig, value: obd.rpm.value?.toDouble())),
+                ],
               ),
               const SizedBox(height: 12),
-              GaugeWidget(config: _rpmConfig, value: obd.rpm.value?.toDouble()),
+              Row(
+                children: [
+                  Expanded(child: GaugeWidget(config: _oilConfig, value: obd.oilTemp.value?.toDouble())),
+                  const SizedBox(width: 12),
+                  Expanded(child: GaugeWidget(config: _iatConfig, value: obd.intakeAirTemp.value?.toDouble())),
+                ],
+              ),
               const SizedBox(height: 12),
-              GaugeWidget(
-                config: _oilConfig,
-                value: obd.oilTemp.value?.toDouble(),
+              Row(
+                children: [
+                  Expanded(child: GaugeWidget(config: _voltageConfig, value: obd.voltage.value)),
+                  const SizedBox(width: 12),
+                  Expanded(child: GaugeWidget(config: _afrConfig, value: obd.afr.value)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(child: GaugeWidget(config: _throttleConfig, value: obd.throttle.value)),
+                  const SizedBox(width: 12),
+                  const Expanded(child: SizedBox.shrink()),
+                ],
               ),
             ],
-          ), // Closes Column
-        ), // Closes SingleChildScrollView
-      ), // Closes Padding
-    ); // Closes SafeArea
+          ),
+        ),
+      ),
+    );
   }
 }
 

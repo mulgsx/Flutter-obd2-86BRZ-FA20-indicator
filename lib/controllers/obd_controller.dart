@@ -21,6 +21,10 @@ class OBDController extends GetxController {
   final rpm = Rxn<int>();
   final waterTemp = Rxn<int>();
   final oilTemp = Rxn<int>();
+  final intakeAirTemp = Rxn<int>();
+  final voltage = Rxn<double>();
+  final afr = Rxn<double>();
+  final throttle = Rxn<double>();
   final logs = <String>[].obs;
 
   // --- Internal state / 内部状態 ---
@@ -42,6 +46,10 @@ class OBDController extends GetxController {
     '010C\r', // RPM
     '0105\r', // Water temp / 冷却水温
     '2101\r', // Oil temp — Mode 21 Subaru-specific + ATSH 7E0 / 油温（Mode 21 Subaru固有 + ATSH 7E0）
+    '010F\r', // Intake air temp / インマニ温度
+    '0142\r', // Control module voltage / 電圧
+    '0134\r', // AFR (O2 sensor 1) / 空燃比
+    '0111\r', // Throttle position / スロットル開度
   ];
   int _pidIndex = 0;
 
@@ -262,6 +270,14 @@ class OBDController extends GetxController {
       } else if (command == '2101\r') {
         _log('OIL RAW: $trimmed'); // For byte position verification / バイト位置確認用
         oilTemp.value = _parseOilTemp(trimmed, rawParts, parts, startIndex);
+      } else if (command == '010F\r') {
+        intakeAirTemp.value = _parseIntakeAirTemp(trimmed, rawParts, parts, startIndex);
+      } else if (command == '0142\r') {
+        voltage.value = _parseVoltage(trimmed, rawParts, parts, startIndex);
+      } else if (command == '0134\r') {
+        afr.value = _parseAfr(trimmed, rawParts, parts, startIndex);
+      } else if (command == '0111\r') {
+        throttle.value = _parseThrottle(trimmed, rawParts, parts, startIndex);
       }
     } catch (e) {
       _log('PARSE ERR: $e ($response)');
@@ -409,6 +425,180 @@ class OBDController extends GetxController {
       );
       _log('OIL TEMP PARSE ERROR: $e | response=$response');
       return 0;
+    }
+  }
+
+  /// Intake air temperature: A - 40 [°C] / インマニ温度: A - 40 [℃]
+  int _parseIntakeAirTemp(
+    String response,
+    List<String> rawParts,
+    List<String> parts,
+    int startIndex,
+  ) {
+    try {
+      if (parts.length <= startIndex) {
+        throw FormatException('Response too short: $response');
+      }
+      final byteValue = int.parse(parts[startIndex], radix: 16);
+      final result = byteValue - 40;
+      debugLogManager.addLog(
+        OBDDebugFormatter.formatIntakeAirTempParse(
+          timestamp: DateTime.now(),
+          rawResponse: response,
+          parts: rawParts,
+          dataIndex: startIndex,
+          byteValue: byteValue,
+          result: result,
+          success: true,
+        ),
+      );
+      return result;
+    } catch (e) {
+      debugLogManager.addLog(
+        OBDDebugFormatter.formatIntakeAirTempParse(
+          timestamp: DateTime.now(),
+          rawResponse: response,
+          parts: rawParts,
+          dataIndex: -1,
+          byteValue: 0,
+          result: 0,
+          success: false,
+          errorMessage: e.toString(),
+        ),
+      );
+      rethrow;
+    }
+  }
+
+  /// Control module voltage: (A*256+B) / 1000 [V] / 電圧
+  double _parseVoltage(
+    String response,
+    List<String> rawParts,
+    List<String> parts,
+    int startIndex,
+  ) {
+    try {
+      if (parts.length <= startIndex + 1) {
+        throw FormatException('Response too short: $response');
+      }
+      final a = int.parse(parts[startIndex], radix: 16);
+      final b = int.parse(parts[startIndex + 1], radix: 16);
+      final result = (a * 256 + b) / 1000.0;
+      debugLogManager.addLog(
+        OBDDebugFormatter.formatVoltageParse(
+          timestamp: DateTime.now(),
+          rawResponse: response,
+          parts: rawParts,
+          dataIndex: startIndex,
+          byteA: a,
+          byteB: b,
+          result: result,
+          success: true,
+        ),
+      );
+      return result;
+    } catch (e) {
+      debugLogManager.addLog(
+        OBDDebugFormatter.formatVoltageParse(
+          timestamp: DateTime.now(),
+          rawResponse: response,
+          parts: rawParts,
+          dataIndex: -1,
+          byteA: 0,
+          byteB: 0,
+          result: 0,
+          success: false,
+          errorMessage: e.toString(),
+        ),
+      );
+      rethrow;
+    }
+  }
+
+  /// Air-fuel ratio: (A*256+B) / 32768 * 14.7 / 空燃比
+  double _parseAfr(
+    String response,
+    List<String> rawParts,
+    List<String> parts,
+    int startIndex,
+  ) {
+    try {
+      if (parts.length <= startIndex + 1) {
+        throw FormatException('Response too short: $response');
+      }
+      final a = int.parse(parts[startIndex], radix: 16);
+      final b = int.parse(parts[startIndex + 1], radix: 16);
+      final result = (a * 256 + b) / 32768.0 * 14.7;
+      debugLogManager.addLog(
+        OBDDebugFormatter.formatAfrParse(
+          timestamp: DateTime.now(),
+          rawResponse: response,
+          parts: rawParts,
+          dataIndex: startIndex,
+          byteA: a,
+          byteB: b,
+          result: result,
+          success: true,
+        ),
+      );
+      return result;
+    } catch (e) {
+      debugLogManager.addLog(
+        OBDDebugFormatter.formatAfrParse(
+          timestamp: DateTime.now(),
+          rawResponse: response,
+          parts: rawParts,
+          dataIndex: -1,
+          byteA: 0,
+          byteB: 0,
+          result: 0,
+          success: false,
+          errorMessage: e.toString(),
+        ),
+      );
+      rethrow;
+    }
+  }
+
+  /// Throttle position: A / 2.55 [%] / スロットル開度
+  double _parseThrottle(
+    String response,
+    List<String> rawParts,
+    List<String> parts,
+    int startIndex,
+  ) {
+    try {
+      if (parts.length <= startIndex) {
+        throw FormatException('Response too short: $response');
+      }
+      final byteValue = int.parse(parts[startIndex], radix: 16);
+      final result = byteValue / 2.55;
+      debugLogManager.addLog(
+        OBDDebugFormatter.formatThrottleParse(
+          timestamp: DateTime.now(),
+          rawResponse: response,
+          parts: rawParts,
+          dataIndex: startIndex,
+          byteValue: byteValue,
+          result: result,
+          success: true,
+        ),
+      );
+      return result;
+    } catch (e) {
+      debugLogManager.addLog(
+        OBDDebugFormatter.formatThrottleParse(
+          timestamp: DateTime.now(),
+          rawResponse: response,
+          parts: rawParts,
+          dataIndex: -1,
+          byteValue: 0,
+          result: 0,
+          success: false,
+          errorMessage: e.toString(),
+        ),
+      );
+      rethrow;
     }
   }
 
