@@ -238,6 +238,9 @@ class OBDController extends GetxController {
       if (response != null && response.isNotEmpty) {
         _parseResponse(cmd, response);
       }
+
+      // PID間インターバル（CANバス過負荷・U0155防止）
+      await Future.delayed(const Duration(milliseconds: 50));
     }
   }
 
